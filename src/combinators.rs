@@ -160,12 +160,11 @@ impl<P: Clone, S: Add<P>> Add<P> for Paralleled<S> {
     type Output = (S::Output, Vec<S::Output>);
 
     fn add(&mut self, polygon: P) -> (S::Output, Vec<S::Output>) {
-        let mut parallel_outputs = Vec::with_capacity(self.parallels.len());
-
-        for parallel in &mut self.parallels {
-            parallel_outputs.push(parallel.add(polygon.clone()));
-        }
-
+        let parallel_outputs = self
+            .parallels
+            .iter_mut()
+            .map(|parallel| parallel.add(polygon.clone()))
+            .collect();
         let primary_output = self.primary.add(polygon);
         (primary_output, parallel_outputs)
     }
@@ -175,12 +174,11 @@ impl<P: Clone, S: Sub<P>> Sub<P> for Paralleled<S> {
     type Output = (S::Output, Vec<S::Output>);
 
     fn sub(&mut self, polygon: P) -> (S::Output, Vec<S::Output>) {
-        let mut parallel_outputs = Vec::with_capacity(self.parallels.len());
-
-        for parallel in &mut self.parallels {
-            parallel_outputs.push(parallel.sub(polygon.clone()));
-        }
-
+        let parallel_outputs = self
+            .parallels
+            .iter_mut()
+            .map(|parallel| parallel.sub(polygon.clone()))
+            .collect();
         let primary_output = self.primary.sub(polygon);
         (primary_output, parallel_outputs)
     }
@@ -328,15 +326,11 @@ impl<SE: Clone, S: Clone + ApplyDelta<SE>> ApplyDelta<ParalleledHalfDelta<SE>> f
 impl<SE: Clone, S: FlushDelta<SE>> FlushDelta<ParalleledHalfDelta<SE>> for Paralleled<S> {
     fn flush_delta(&mut self) -> ParalleledDelta<SE> {
         let (removed_primary, inserted_primary) = self.primary.flush_delta().dissolve();
-
-        let mut removed_parallels = Vec::with_capacity(self.parallels.len());
-        let mut inserted_parallels = Vec::with_capacity(self.parallels.len());
-
-        for parallel in &mut self.parallels {
-            let (removed_parallel, inserted_parallel) = parallel.flush_delta().dissolve();
-            removed_parallels.push(removed_parallel);
-            inserted_parallels.push(inserted_parallel);
-        }
+        let (removed_parallels, inserted_parallels) = self
+            .parallels
+            .iter_mut()
+            .map(|parallel| parallel.flush_delta().dissolve())
+            .unzip();
 
         Delta::with_removed_inserted(
             Paralleled {
