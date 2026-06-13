@@ -26,14 +26,29 @@ pub trait Difference<T> {
     fn difference(subj: T, clip: T) -> Vec<T>;
 }
 
+/// Output format on success: `[exterior, interiors..]`
 fn rings_to_shape<K, P: Rings<K>>(polygon: &P) -> Vec<Vec<[K; 2]>>
 where
     K: Clone,
 {
-    let mut shape = Vec::new();
+    let mut shape = Vec::with_capacity(1 + polygon.interiors().count());
     shape.push(polygon.exterior().to_vec());
     shape.extend(polygon.interiors().map(<[_]>::to_vec));
     shape
+}
+
+/// Output format on success: `[exterior, interiors..]`
+fn rings_to_int_shape<K, X: Rings<K>>(polygon: &X) -> Option<IntShape>
+where
+    K: Copy,
+    i32: TryFrom<K>,
+{
+    let mut shape = Vec::with_capacity(1 + polygon.interiors().count());
+    shape.push(to_int_ring(polygon.exterior())?);
+    for ring in polygon.interiors() {
+        shape.push(to_int_ring(ring)?);
+    }
+    Some(shape)
 }
 
 fn first_merged_shape<K>(union: Vec<Vec<Vec<[K; 2]>>>) -> Option<(Vec<[K; 2]>, Vec<Vec<[K; 2]>>)> {
@@ -63,6 +78,30 @@ fn all_merged_shapes<K>(shapes: Vec<Vec<Vec<[K; 2]>>>) -> Vec<(Vec<[K; 2]>, Vec<
         .collect()
 }
 
+fn to_int_ring<K>(ring: &[[K; 2]]) -> Option<Vec<IntPoint>>
+where
+    K: Copy,
+    i32: TryFrom<K>,
+{
+    ring.iter()
+        .map(|vertex| {
+            Some(IntPoint::new(
+                i32::try_from(vertex[0]).ok()?,
+                i32::try_from(vertex[1]).ok()?,
+            ))
+        })
+        .collect()
+}
+
+fn from_int_ring<K>(ring: &[IntPoint]) -> Option<Vec<[K; 2]>>
+where
+    K: TryFrom<i32>,
+{
+    ring.iter()
+        .map(|vertex| Some([K::try_from(vertex.x).ok()?, K::try_from(vertex.y).ok()?]))
+        .collect()
+}
+
 fn overlay_int_polygons<K, A: Rings<K>, B: Rings<K>>(
     a: &A,
     b: &B,
@@ -72,28 +111,8 @@ where
     K: Copy + TryFrom<i32>,
     i32: TryFrom<K>,
 {
-    let to_int_ring = |ring: &[[K; 2]]| -> Option<Vec<IntPoint>> {
-        ring.iter()
-            .map(|vertex| {
-                Some(IntPoint::new(
-                    i32::try_from(vertex[0]).ok()?,
-                    i32::try_from(vertex[1]).ok()?,
-                ))
-            })
-            .collect()
-    };
-
-    let mut subj_shape: IntShape = Vec::new();
-    subj_shape.push(to_int_ring(a.exterior())?);
-    for ring in a.interiors() {
-        subj_shape.push(to_int_ring(ring)?);
-    }
-
-    let mut clip_shape: IntShape = Vec::new();
-    clip_shape.push(to_int_ring(b.exterior())?);
-    for ring in b.interiors() {
-        clip_shape.push(to_int_ring(ring)?);
-    }
+    let subj_shape = rings_to_int_shape::<K, _>(a)?;
+    let clip_shape = rings_to_int_shape::<K, _>(b)?;
 
     let union = Overlay::with_shapes(slice::from_ref(&subj_shape), slice::from_ref(&clip_shape))
         .overlay(overlay_rule, FillRule::EvenOdd);
@@ -107,17 +126,11 @@ where
         return None;
     }
 
-    let from_int_ring = |ring: &[IntPoint]| -> Option<Vec<[K; 2]>> {
-        ring.iter()
-            .map(|vertex| Some([K::try_from(vertex.x).ok()?, K::try_from(vertex.y).ok()?]))
-            .collect()
-    };
-
     let exterior = from_int_ring(&merged_shape[0])?;
     let interiors = merged_shape[1..]
         .iter()
         .map(|ring| from_int_ring(ring))
-        .collect::<Option<Vec<_>>>()?;
+        .collect::<Option<_>>()?;
 
     Some((exterior, interiors))
 }
@@ -131,45 +144,14 @@ where
     K: Copy + TryFrom<i32>,
     i32: TryFrom<K>,
 {
-    let to_int_ring = |ring: &[[K; 2]]| -> Option<Vec<IntPoint>> {
-        ring.iter()
-            .map(|vertex| {
-                Some(IntPoint::new(
-                    i32::try_from(vertex[0]).ok()?,
-                    i32::try_from(vertex[1]).ok()?,
-                ))
-            })
-            .collect()
-    };
+    let subj_shape = rings_to_int_shape::<K, _>(a)?;
+    let clip_shape = rings_to_int_shape::<K, _>(b)?;
 
-    let mut subj_shape: IntShape = Vec::new();
-    subj_shape.push(to_int_ring(a.exterior())?);
-    for ring in a.interiors() {
-        subj_shape.push(to_int_ring(ring)?);
-    }
-
-    let mut clip_shape: IntShape = Vec::new();
-    clip_shape.push(to_int_ring(b.exterior())?);
-    for ring in b.interiors() {
-        clip_shape.push(to_int_ring(ring)?);
-    }
-
-    let shapes = Overlay::with_shapes(slice::from_ref(&subj_shape), slice::from_ref(&clip_shape))
-        .overlay(overlay_rule, FillRule::EvenOdd);
-
-    let from_int_ring = |ring: &[IntPoint]| -> Option<Vec<[K; 2]>> {
-        ring.iter()
-            .map(|vertex| Some([K::try_from(vertex.x).ok()?, K::try_from(vertex.y).ok()?]))
-            .collect()
-    };
-
-    shapes
+    Overlay::with_shapes(slice::from_ref(&subj_shape), slice::from_ref(&clip_shape))
+        .overlay(overlay_rule, FillRule::EvenOdd)
         .into_iter()
         .map(|shape| {
-            if shape.is_empty() {
-                return None;
-            }
-            let exterior = from_int_ring(&shape[0])?;
+            let exterior = from_int_ring(shape.get(0)?)?;
             let interiors = shape[1..]
                 .iter()
                 .map(|ring| from_int_ring(ring))
