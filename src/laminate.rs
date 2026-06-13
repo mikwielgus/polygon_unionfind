@@ -44,18 +44,23 @@ where
     K: RTreeNum + Default,
     P: Clone + Rings<K> + Union<P> + Difference<P>,
 {
-    pub fn new(
+    pub fn new<PI>(
         boundary: P,
         num_laminas: usize,
-        peripheral_inflations: impl IntoIterator<Item = K>,
+        peripheral_inflations: PI,
         rail_offsets: impl IntoIterator<Item = K>,
-    ) -> Self {
-        let peripheral_inflations: Vec<K> = peripheral_inflations.into_iter().collect();
+    ) -> Self
+    where
+        PI: IntoIterator<Item = K>,
+        PI::IntoIter: core::iter::ExactSizeIterator,
+    {
+        let peripheral_inflations = peripheral_inflations.into_iter();
+        let count_peripheral_inflations = peripheral_inflations.len();
         let rail_offsets: Vec<K> = rail_offsets.into_iter().collect();
 
         let laminas: Vec<Lamina<K, P>> =
             vec![
-                lamina_from_boundary(&boundary, &peripheral_inflations, &rail_offsets);
+                lamina_from_boundary(&boundary, peripheral_inflations, &rail_offsets);
                 num_laminas
             ];
         let interlamina = {
@@ -63,7 +68,7 @@ where
             let _ = primary_set.add(boundary.clone());
             Paralleled::new(
                 primary_set,
-                core::iter::repeat_n(PolygonSet::new(), peripheral_inflations.len()).collect(),
+                core::iter::repeat_n(PolygonSet::new(), count_peripheral_inflations).collect(),
             )
         };
         let interlaminas: Vec<Interlamina<K, P>> = vec![interlamina; num_laminas.saturating_sub(1)];
@@ -109,56 +114,32 @@ impl<K: RTreeNum, P, L, T> Laminate<K, P, L, T> {
 
 fn lamina_from_boundary<K, P>(
     boundary: &P,
-    peripheral_inflations: &[K],
+    peripheral_inflations: impl Iterator<Item = K>,
     rail_offsets: &[K],
 ) -> Lamina<K, P>
 where
     K: RTreeNum + Default,
     P: Clone + Rings<K> + Union<P> + Difference<P>,
 {
-    let mut core_track_minuend = PolygonSet::new();
-    let _ = core_track_minuend.add(boundary.clone());
-    let core_track = Negated::new(core_track_minuend, Inflated::new(K::default()));
+    let make_negated =
+        |offset: K| -> Negated<PolygonSet<K, P>, Inflated<PolygonUnionFind<K, P>, K>> {
+            let mut minuend = PolygonSet::new();
+            let _ = minuend.add(boundary.clone());
+            Negated::new(minuend, Inflated::new(offset))
+        };
 
-    let mut core_rails = vec![];
+    let make_paralleled =
+        |offset: K| -> Paralleled<Negated<PolygonSet<K, P>, Inflated<PolygonUnionFind<K, P>, K>>> {
+            let track = make_negated(offset);
+            let rails = rail_offsets
+                .iter()
+                .map(|&rail_offset| make_negated(offset + rail_offset))
+                .collect();
+            Paralleled::new(track, rails)
+        };
 
-    for &core_rail_offset in rail_offsets {
-        let mut core_rail_minuend = PolygonSet::new();
-        let _ = core_rail_minuend.add(boundary.clone());
-
-        core_rails.push(Negated::new(
-            core_rail_minuend,
-            Inflated::new(core_rail_offset),
-        ));
-    }
-
-    let core = Paralleled::new(core_track, core_rails);
-
-    let mut peripherals = vec![];
-
-    for &peripheral_inflation in peripheral_inflations {
-        let mut peripheral_track_minuend = PolygonSet::new();
-        let _ = peripheral_track_minuend.add(boundary.clone());
-        let peripheral_track = Negated::new(
-            peripheral_track_minuend,
-            Inflated::new(peripheral_inflation),
-        );
-
-        let mut peripheral_rails = vec![];
-
-        for &peripheral_rail_offset in rail_offsets {
-            let mut peripheral_rail_minuend = PolygonSet::new();
-            let _ = peripheral_rail_minuend.add(boundary.clone());
-
-            peripheral_rails.push(Negated::new(
-                peripheral_rail_minuend,
-                Inflated::new(peripheral_inflation + peripheral_rail_offset),
-            ));
-        }
-
-        peripherals.push(Paralleled::new(peripheral_track, peripheral_rails));
-    }
-
+    let core = make_paralleled(K::default());
+    let peripherals = peripheral_inflations.map(make_paralleled).collect();
     Paralleled::new(core, peripherals)
 }
 
