@@ -53,19 +53,20 @@ where
         let peripheral_inflations: Vec<K> = peripheral_inflations.into_iter().collect();
         let rail_offsets: Vec<K> = rail_offsets.into_iter().collect();
 
-        let laminas: Vec<Lamina<K, P>> = (0..num_laminas)
-            .map(|_| lamina_from_boundary(&boundary, &peripheral_inflations, &rail_offsets))
-            .collect();
-        let interlaminas: Vec<Interlamina<K, P>> = (0..num_laminas.saturating_sub(1))
-            .map(|_| {
-                let mut primary_set = PolygonSet::new();
-                let _ = primary_set.add(boundary.clone());
-                Paralleled::new(
-                    primary_set,
-                    std::iter::repeat_n(PolygonSet::new(), peripheral_inflations.len()).collect(),
-                )
-            })
-            .collect();
+        let laminas: Vec<Lamina<K, P>> =
+            vec![
+                lamina_from_boundary(&boundary, &peripheral_inflations, &rail_offsets);
+                num_laminas
+            ];
+        let interlamina = {
+            let mut primary_set = PolygonSet::new();
+            let _ = primary_set.add(boundary.clone());
+            Paralleled::new(
+                primary_set,
+                core::iter::repeat_n(PolygonSet::new(), peripheral_inflations.len()).collect(),
+            )
+        };
+        let interlaminas: Vec<Interlamina<K, P>> = vec![interlamina; num_laminas.saturating_sub(1)];
 
         Self::with_laminas_interlaminas(laminas, interlaminas)
     }
