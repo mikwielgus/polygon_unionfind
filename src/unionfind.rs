@@ -69,14 +69,14 @@ impl<
 
     /// Find the representative of the given node.
     ///
-    /// If you want to path compression to be performed, use [`find_compress()`]
+    /// If you want path compression to be performed, use [`find_compress()`]
     /// instead.
     pub fn find(&self, node: usize) -> usize {
-        if *self.parents.get(&node).unwrap() != node {
-            return self.find(*self.parents.get(&node).unwrap());
+        let parent = *self.parents.get(&node).unwrap();
+        if parent != node {
+            return self.find(parent);
         }
-
-        *self.parents.get(&node).unwrap()
+        parent
     }
 
     /// Find the representative of element under the given node, performing path
@@ -86,13 +86,13 @@ impl<
     /// is an optimization that speeds up finding an element by flattening the
     /// tree formed by all the connected nodes.
     pub fn find_compress(&mut self, node: usize) -> usize {
-        if *self.parents.get(&node).unwrap() != node {
+        let mut parent = *self.parents.get(&node).unwrap();
+        if parent != node {
             // Perform the path compression.
-            let parent = self.find_compress(*self.parents.get(&node).unwrap());
+            parent = self.find_compress(parent);
             self.parents.set(node, parent);
         }
-
-        *self.parents.get(&node).unwrap()
+        parent
     }
 
     /// Unionize the sets containing nodes `x` and `y`, minimizing the rank.
