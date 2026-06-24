@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use std::{collections::BTreeSet, marker::PhantomData};
+use std::{marker::PhantomData, vec::Vec};
 
 use maplike::{Clear, Container, Get, Insert, IntoIter, Push, Remove, Set};
 use rstar::{
@@ -121,24 +121,25 @@ impl<K, P, PC: Default, PR: Default, UFPC: Default, UFRC: Default> Default
 }
 
 impl<
-    K: RTreeNum,
+    K,
     P,
-    PC: Clone + IntoIter<usize> + Get<usize, Value = P> + Push<usize> + Set<usize>,
-    PR: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>>
-        + Insert<GeomWithData<Rectangle<[K; 2]>, PolygonId>, Value = ()>,
+    PC,
+    PR,
     UFPC: Get<usize, Value = usize> + Push<usize> + Set<usize>,
     UFRC: Get<usize, Value = usize> + Push<usize> + Set<usize>,
 > PolygonUnionFind<K, P, PC, PR, UFPC, UFRC>
+where
+    for<'a> &'a PC: IntoIter<&'a usize, Value = &'a P>,
 {
     /// Return unique representative indices for currently merged polygons.
     #[inline]
-    pub fn polygon_indices(&mut self) -> impl Iterator<Item = usize> {
-        let mut deduplicating_set = BTreeSet::new();
-
-        for (i, _polygon) in self.polygons.clone().into_iter() {
-            deduplicating_set.insert(self.unionfind.find(i));
-        }
-
+    pub fn polygon_indices(&self) -> impl Iterator<Item = usize> {
+        let mut deduplicating_set = (&self.polygons)
+            .into_iter()
+            .map(|(i, _)| self.unionfind.find(*i))
+            .collect::<Vec<_>>();
+        deduplicating_set.sort_unstable();
+        deduplicating_set.dedup();
         IntoIterator::into_iter(deduplicating_set)
     }
 
@@ -147,14 +148,14 @@ impl<
     /// If several inserted polygons have been merged into one component,
     /// only the representative polygon for that component is returned.
     #[inline]
-    pub fn polygons(&mut self) -> impl Iterator<Item = &PC::Value> {
-        let mut deduplicating_set = BTreeSet::new();
-
-        for (i, _polygon) in self.polygons.clone().into_iter() {
-            deduplicating_set.insert(self.unionfind.find(i));
-        }
-
-        IntoIterator::into_iter(deduplicating_set).map(|i| self.polygons.get(&i).unwrap())
+    pub fn polygons(&self) -> impl Iterator<Item = <&PC as Container>::Value> {
+        let mut deduplicating_set = (&self.polygons)
+            .into_iter()
+            .map(|(i, polygon)| (self.unionfind.find(*i), polygon))
+            .collect::<Vec<_>>();
+        deduplicating_set.sort_unstable_by_key(|&(i, _)| i);
+        deduplicating_set.dedup_by_key(|&mut (i, _)| i);
+        IntoIterator::into_iter(deduplicating_set).map(|(_, polygon)| polygon)
     }
 }
 
