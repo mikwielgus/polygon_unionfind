@@ -94,7 +94,7 @@ impl<K, P, PC: Default, PR: Default> Default for PolygonSet<K, P, PC, PR> {
 
 impl<
     K: RTreeNum,
-    P: Clone + Rings<K> + Union<P> + Difference<P>,
+    P: Clone + Rings<K> + Union<P>,
     PC: Get<usize, Value = P> + Push<usize> + Remove<usize> + Set<usize>,
     PR: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>>
         + Insert<GeomWithData<Rectangle<[K; 2]>, PolygonId>, Value = ()>
@@ -110,7 +110,7 @@ impl<
 
 impl<
     K: RTreeNum,
-    P: Clone + Rings<K> + Union<P> + Difference<P>,
+    P: Clone + Rings<K> + Union<P>,
     PC: Get<usize, Value = P> + Push<usize> + Remove<usize> + Set<usize>,
     PR: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>>
         + Insert<GeomWithData<Rectangle<[K; 2]>, PolygonId>, Value = ()>
@@ -165,7 +165,7 @@ impl<
 
 impl<
     K: RTreeNum,
-    P: Clone + Rings<K> + Union<P> + Difference<P>,
+    P: Clone + Rings<K> + Difference<P>,
     PC: Get<usize, Value = P> + Push<usize> + Remove<usize> + Set<usize>,
     PR: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>>
         + Insert<GeomWithData<Rectangle<[K; 2]>, PolygonId>, Value = ()>
@@ -181,7 +181,7 @@ impl<
 
 impl<
     K: RTreeNum,
-    P: Clone + Rings<K> + Union<P> + Difference<P>,
+    P: Clone + Rings<K> + Difference<P>,
     PC: Get<usize, Value = P> + Push<usize> + Remove<usize> + Set<usize>,
     PR: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>>
         + Insert<GeomWithData<Rectangle<[K; 2]>, PolygonId>, Value = ()>
@@ -234,8 +234,8 @@ impl<
 }
 
 impl<
-    K: RTreeNum + Ord,
-    P: Clone + Rings<K> + Union<P> + Difference<P> + Intersection<P>,
+    K: RTreeNum,
+    P: Clone + Rings<K> + Intersection<P>,
     PC: Get<usize, Value = P> + Push<usize> + Remove<usize> + Set<usize>,
     PR: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>>
         + Insert<GeomWithData<Rectangle<[K; 2]>, PolygonId>, Value = ()>
@@ -250,8 +250,8 @@ impl<
 }
 
 impl<
-    K: RTreeNum + Ord,
-    P: Clone + Rings<K> + Union<P> + Difference<P> + Intersection<P>,
+    K: RTreeNum,
+    P: Clone + Rings<K> + Intersection<P>,
     PC: Get<usize, Value = P> + Push<usize> + Remove<usize> + Set<usize>,
     PR: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>>
         + Insert<GeomWithData<Rectangle<[K; 2]>, PolygonId>, Value = ()>
@@ -312,8 +312,8 @@ impl<
 
 impl<
     K: RTreeNum,
-    P: Clone + Rings<K> + Union<P> + Difference<P>,
-    PC: Get<usize, Value = P> + Push<usize> + Remove<usize> + Set<usize>,
+    P: Clone + Rings<K>,
+    PC,
     PR: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>>
         + Insert<GeomWithData<Rectangle<[K; 2]>, PolygonId>, Value = ()>
         + Remove<GeomWithData<Rectangle<[K; 2]>, PolygonId>>,
@@ -357,14 +357,8 @@ pub type PolygonSetHalfDelta<K, P = Polygon<K>> =
 pub type PolygonSetDelta<K, P = Polygon<K>> = Delta<PolygonSetHalfDelta<K, P>>;
 
 #[cfg(feature = "undoredo")]
-impl<
-    K: RTreeNum,
-    P: Clone,
-    PE: Clone + Container<Value = P>,
-    PC: Container<Value = P> + Clone + ApplyDelta<PE>,
-    PRE: Clone + Container,
-    PR: Container + Clone + ApplyDelta<PRE>,
-> ApplyDelta<PolygonSet<K, P, PE, PRE>> for PolygonSet<K, P, PC, PR>
+impl<K, P, PE, PC: ApplyDelta<PE>, PRE, PR: ApplyDelta<PRE>> ApplyDelta<PolygonSet<K, P, PE, PRE>>
+    for PolygonSet<K, P, PC, PR>
 {
     fn apply_delta(&mut self, delta: Delta<PolygonSet<K, P, PE, PRE>>) {
         let (removed, inserted) = delta.dissolve();
@@ -378,14 +372,8 @@ impl<
 }
 
 #[cfg(feature = "undoredo")]
-impl<
-    K: RTreeNum,
-    P: Clone,
-    PE: Clone + Container<Value = P>,
-    PC: Container<Value = P> + FlushDelta<PE>,
-    PRE: Clone + Container,
-    PR: Container + FlushDelta<PRE>,
-> FlushDelta<PolygonSet<K, P, PE, PRE>> for PolygonSet<K, P, PC, PR>
+impl<K, P, PE, PC: FlushDelta<PE>, PRE, PR: FlushDelta<PRE>> FlushDelta<PolygonSet<K, P, PE, PRE>>
+    for PolygonSet<K, P, PC, PR>
 {
     fn flush_delta(&mut self) -> Delta<PolygonSet<K, P, PE, PRE>> {
         let (removed_polygons, inserted_polygons) = self.polygons.flush_delta().dissolve();
