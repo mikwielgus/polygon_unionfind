@@ -197,7 +197,7 @@ impl<
 
         let bbox = rectangle_from_polygon(&polygon);
         self.rtree.insert(
-            GeomWithData::new(bbox.clone(), PolygonId::new(new_polygon_index)),
+            GeomWithData::new(bbox, PolygonId::new(new_polygon_index)),
             (),
         );
 

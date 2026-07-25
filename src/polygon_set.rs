@@ -153,11 +153,10 @@ impl<
 
         maybe_absorber_id.unwrap_or_else(|| {
             let new_id = PolygonId::new(self.polygons.push(polygon));
-            let new_polygon = self.polygons.get(&new_id.index()).unwrap().clone();
-            let new_bbox = rectangle_from_polygon(&new_polygon);
+            let new_polygon = self.polygons.get(&new_id.index()).unwrap();
+            let new_bbox = rectangle_from_polygon(new_polygon);
 
-            self.rtree
-                .insert(GeomWithData::new(new_bbox.clone(), new_id), ());
+            self.rtree.insert(GeomWithData::new(new_bbox, new_id), ());
 
             new_id
         })

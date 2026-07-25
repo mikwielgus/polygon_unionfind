@@ -27,7 +27,7 @@ impl<
     pub fn with_len(len: usize) -> Self {
         Self::from_parents_ranks(
             PC::from_iter(0..len),
-            RC::from_iter(std::iter::repeat(0).take(len)),
+            RC::from_iter(std::iter::repeat_n(0, len)),
         )
     }
 }
