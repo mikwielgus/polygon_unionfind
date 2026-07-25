@@ -129,6 +129,7 @@ impl<
     UFRC: Get<usize, Value = usize> + Push<usize> + Set<usize>,
 > PolygonUnionFind<K, P, PC, PR, UFPC, UFRC>
 where
+    PC: Get<usize, Value = P>,
     for<'a> &'a PC: IntoIter<&'a usize, Value = &'a P>,
 {
     /// Return unique representative indices for currently merged polygons.
@@ -148,14 +149,9 @@ where
     /// If several inserted polygons have been merged into one component,
     /// only the representative polygon for that component is returned.
     #[inline]
-    pub fn polygons(&self) -> impl Iterator<Item = <&PC as Container>::Value> {
-        let mut deduplicating_set = (&self.polygons)
-            .into_iter()
-            .map(|(i, polygon)| (self.unionfind.find(*i), polygon))
-            .collect::<Vec<_>>();
-        deduplicating_set.sort_unstable_by_key(|&(i, _)| i);
-        deduplicating_set.dedup_by_key(|&mut (i, _)| i);
-        IntoIterator::into_iter(deduplicating_set).map(|(_, polygon)| polygon)
+    pub fn polygons(&self) -> impl Iterator<Item = &P> {
+        self.polygon_indices()
+            .map(|i| self.polygons.get(&i).unwrap())
     }
 }
 
