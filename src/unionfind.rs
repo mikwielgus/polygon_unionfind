@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 #[cfg(feature = "undoredo")]
-use maplike::Container;
-use maplike::{Clear, Get, Push, Set};
+use maplike::containers::Container;
+use maplike::ops::{Clear, Get, Push, Set};
 #[cfg(feature = "undoredo")]
 use undoredo::{ApplyDelta, Delta, FlushDelta};
 

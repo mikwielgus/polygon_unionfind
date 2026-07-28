@@ -4,7 +4,11 @@
 
 use std::{marker::PhantomData, vec::Vec};
 
-use maplike::{Clear, Container, Get, Insert, IntoIter, Push, Remove, Set};
+use maplike::{
+    containers::Container,
+    iter::IntoIter,
+    ops::{Clear, Get, Insert, Push, Remove, Set},
+};
 use rstar::{
     RTree, RTreeNum, RTreeObject,
     primitives::{GeomWithData, Rectangle},

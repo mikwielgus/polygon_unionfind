@@ -4,7 +4,7 @@
 
 use alloc::vec::Vec;
 
-use maplike::{Container, Get};
+use maplike::{containers::Container, ops::Get};
 
 use crate::{Add, Clip, Inflate, PolygonId, Sub};
 #[cfg(feature = "undoredo")]

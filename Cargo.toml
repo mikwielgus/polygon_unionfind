@@ -1,6 +1,12 @@
+[workspace]
+members = [".", "demos/*"]
+
+[workspace.dependencies]
+undoredo = { version = "0.13", features = ["derive", "rstar", "stable-vec"] }
+
 [package]
 name = "polygon_unionfind"
-version = "0.8.0"
+version = "0.9.0"
 authors = ["Mikolaj Wielgus <wielgusmikolaj@gmail.com>"]
 description = "Disjoint-set data structure (union-find) for polygons."
 repository = "https://github.com/mikwielgus/polygon_unionfind"
@@ -27,12 +33,12 @@ undoredo = ["dep:undoredo"]
 [dependencies]
 document-features = { version = "0.2", optional = true }
 i_overlay = "4.4"
-maplike = { version = "0.9", features = ["stable-vec"] }
+maplike = { version = "0.13", features = ["stable-vec"] }
 num-traits = "0.2"
 rstar = "0.12"
-rstared = "0.9"
+rstared = "0.13"
 stable-vec = "0.4.2"
-undoredo = { version = "0.9", features = ["derive", "rstar", "stable-vec"], optional = true }
+undoredo = { workspace = true, optional = true }
 
 [package.metadata.docs.rs]
 cargo-args = ["--all-features", "-Zunstable-options", "-Zrustdoc-scrape-examples"]

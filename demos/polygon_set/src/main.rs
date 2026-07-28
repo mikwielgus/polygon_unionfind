@@ -97,8 +97,7 @@ fn random_polygon_at_screen_click(
 
 #[macroquad::main("Polygon Set Viewer")]
 async fn main() {
-    let mut undoredo: UndoRedo<PolygonSetDelta<i32, PolygonWithData<i32, ()>>> =
-        UndoRedo::new();
+    let mut undoredo: UndoRedo<PolygonSetDelta<i32, PolygonWithData<i32, ()>>> = UndoRedo::new();
     let mut polygon_set: RecordingPolygonSet<i32, PolygonWithData<i32, ()>> =
         RecordingPolygonSet::new();
 

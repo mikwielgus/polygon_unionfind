@@ -5,9 +5,8 @@
 use macroquad::prelude::*;
 use macroquad::rand::gen_range;
 use polygon_unionfind::{
-    Inflated, LaminateDelta, Negated, Paralleled, PolygonSetHalfDelta,
-    PolygonUnionFindHalfDelta, PolygonWithData, RecordingInflated, RecordingLaminate,
-    RecordingNegated, RecordingPolygonSet,
+    Inflated, LaminateDelta, Negated, Paralleled, PolygonSetHalfDelta, PolygonUnionFindHalfDelta,
+    PolygonWithData, RecordingInflated, RecordingLaminate, RecordingNegated, RecordingPolygonSet,
 };
 use undoredo::UndoRedo;
 
@@ -48,10 +47,7 @@ fn frame_polygon() -> DemoPolygon {
 fn new_negated_layer(offset: i32) -> DemoNegated {
     let mut minuend: RecordingPolygonSet<i32, DemoPolygon> = RecordingPolygonSet::new();
     let _ = minuend.add(frame_polygon());
-    RecordingNegated::new(
-        minuend,
-        RecordingInflated::<i32, DemoPolygon>::new(offset),
-    )
+    RecordingNegated::new(minuend, RecordingInflated::<i32, DemoPolygon>::new(offset))
 }
 
 fn new_layer_stack() -> DemoLayer {

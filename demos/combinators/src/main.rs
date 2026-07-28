@@ -7,9 +7,9 @@
 use macroquad::prelude::*;
 use macroquad::rand::gen_range;
 use polygon_unionfind::{
-    Inflated, LaminateDelta, Negated, Paralleled, PolygonSetHalfDelta,
-    PolygonUnionFindHalfDelta, PolygonWithData, RecordingInflated, RecordingLaminate,
-    RecordingNegated, RecordingPolygonSet, RecordingPolygonUnionFind,
+    Inflated, LaminateDelta, Negated, Paralleled, PolygonSetHalfDelta, PolygonUnionFindHalfDelta,
+    PolygonWithData, RecordingInflated, RecordingLaminate, RecordingNegated, RecordingPolygonSet,
+    RecordingPolygonUnionFind,
 };
 use undoredo::UndoRedo;
 
@@ -17,8 +17,7 @@ type DemoPolygon = PolygonWithData<i32, ()>;
 type DemoNegated = RecordingNegated<i32, DemoPolygon>;
 type DemoLayerWithParallels = Paralleled<Paralleled<DemoNegated>>;
 type DemoTransitionLayer = Paralleled<RecordingPolygonSet<i32, DemoPolygon>>;
-type DemoLaminate =
-    RecordingLaminate<i32, DemoPolygon>;
+type DemoLaminate = RecordingLaminate<i32, DemoPolygon>;
 type DemoLayersDelta = LaminateDelta<
     i32,
     DemoPolygon,
@@ -26,7 +25,10 @@ type DemoLayersDelta = LaminateDelta<
         Paralleled<
             Negated<
                 PolygonSetHalfDelta<i32, DemoPolygon>,
-                Inflated<PolygonUnionFindHalfDelta<i32, DemoPolygon>, core::marker::PhantomData<i32>>,
+                Inflated<
+                    PolygonUnionFindHalfDelta<i32, DemoPolygon>,
+                    core::marker::PhantomData<i32>,
+                >,
             >,
         >,
     >,
@@ -47,12 +49,14 @@ impl Layers {
                 data: (),
             });
 
-            RecordingNegated::new(
-                minuend,
-                RecordingInflated::<i32, DemoPolygon>::new(offset),
+            RecordingNegated::new(minuend, RecordingInflated::<i32, DemoPolygon>::new(offset))
+        };
+        let new_layer = || {
+            DemoLayerWithParallels::new(
+                Paralleled::new(new_negated(0), vec![new_negated(50)]),
+                vec![],
             )
         };
-        let new_layer = || DemoLayerWithParallels::new(Paralleled::new(new_negated(0), vec![new_negated(50)]), vec![]);
         let new_transition = || DemoTransitionLayer::new(RecordingPolygonSet::new(), vec![]);
 
         Self {
@@ -88,9 +92,7 @@ impl Layers {
     }
 
     fn parallel_subtrahend(&self) -> &RecordingPolygonUnionFind<i32, DemoPolygon> {
-        self.inner.laminas()[0]
-            .primary()
-            .parallels()[0]
+        self.inner.laminas()[0].primary().parallels()[0]
             .subtrahend()
             .inflatee()
     }
@@ -112,9 +114,7 @@ impl Layers {
     }
 
     fn bottom_parallel_subtrahend(&self) -> &RecordingPolygonUnionFind<i32, DemoPolygon> {
-        self.inner.laminas()[1]
-            .primary()
-            .parallels()[0]
+        self.inner.laminas()[1].primary().parallels()[0]
             .subtrahend()
             .inflatee()
     }

@@ -5,7 +5,7 @@
 use alloc::collections::BTreeSet;
 use alloc::vec::Vec;
 use core::marker::PhantomData;
-use maplike::Get;
+use maplike::ops::Get;
 
 use rstar::RTreeNum;
 use rstar::primitives::{GeomWithData, Rectangle};
