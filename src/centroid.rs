@@ -52,6 +52,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use alloc::{vec, vec::Vec};
 
     #[test]
     fn polygon_centroid_of_triangle() {

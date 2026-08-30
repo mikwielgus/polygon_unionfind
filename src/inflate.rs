@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+use alloc::vec::Vec;
 use i_overlay::mesh::{outline::offset::OutlineOffset, style::OutlineStyle};
 
 use crate::{Polygon, PolygonWithData};

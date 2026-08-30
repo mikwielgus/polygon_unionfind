@@ -7,9 +7,7 @@
 #![cfg_attr(docsrs, doc = "\n## Feature flags\n")]
 #![cfg_attr(docsrs, doc = document_features::document_features!())]
 #![cfg_attr(docsrs, feature(doc_cfg))]
-
-#[cfg(feature = "std")]
-extern crate std;
+#![no_std]
 
 // No feature for `alloc` because it would be always enabled anyway.
 extern crate alloc;

@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+use alloc::vec::Vec;
 #[cfg(feature = "undoredo")]
 use maplike::containers::Container;
 use maplike::ops::{Clear, Get, Push, Set};
@@ -27,7 +28,7 @@ impl<
     pub fn with_len(len: usize) -> Self {
         Self::from_parents_ranks(
             PC::from_iter(0..len),
-            RC::from_iter(std::iter::repeat_n(0, len)),
+            RC::from_iter(core::iter::repeat_n(0, len)),
         )
     }
 }
@@ -109,7 +110,7 @@ impl<
         // Perform union by rank.
 
         if self.ranks.get(&x_representative).unwrap() < self.ranks.get(&y_representative).unwrap() {
-            std::mem::swap(&mut x_representative, &mut y_representative);
+            core::mem::swap(&mut x_representative, &mut y_representative);
         }
 
         self.parents.set(y_representative, x_representative);

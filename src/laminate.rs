@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use alloc::collections::BTreeSet;
-use alloc::vec::Vec;
+use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
 use maplike::ops::Get;
 
@@ -231,7 +231,7 @@ where
             for hit in interlamina
                 .primary()
                 .as_ref()
-                .locate_in_envelope_intersecting(&clip_bbox.envelope())
+                .locate_in_envelope_intersecting(clip_bbox.envelope())
             {
                 located_interids.insert(hit.data);
             }

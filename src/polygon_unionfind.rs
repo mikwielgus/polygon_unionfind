@@ -2,8 +2,11 @@
 //
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use std::{marker::PhantomData, vec::Vec};
+use alloc::vec::Vec;
+use core::marker::PhantomData;
 
+#[cfg(feature = "undoredo")]
+use alloc::collections::BTreeMap;
 use maplike::{
     containers::Container,
     iter::IntoIter,
@@ -14,8 +17,6 @@ use rstar::{
     primitives::{GeomWithData, Rectangle},
 };
 use rstared::AsRefRTree;
-#[cfg(feature = "undoredo")]
-use std::collections::BTreeMap;
 #[cfg(feature = "undoredo")]
 use undoredo::{ApplyDelta, Delta, FlushDelta, Recorder};
 
@@ -207,7 +208,7 @@ impl<
         let located_ids: Vec<PolygonId> = self
             .rtree
             .as_ref()
-            .locate_in_envelope_intersecting(&bbox.envelope())
+            .locate_in_envelope_intersecting(bbox.envelope())
             .map(|neighbor| neighbor.data)
             .collect();
 

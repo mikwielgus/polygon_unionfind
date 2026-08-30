@@ -21,11 +21,6 @@ edition = "2024"
 maintenance = { status = "actively-developed" }
 
 [features]
-default = ["std"]
-
-## Disable for `no_std` compatibility.
-std = []
-
 ## Enables integration with [`undoredo`](https://crates.io/crates/undoredo) for
 ## Undo/Redo functionality.
 undoredo = ["dep:undoredo"]
@@ -35,7 +30,7 @@ document-features = { version = "0.2", optional = true }
 i_overlay = "4.4"
 maplike = { version = "0.13", features = ["stable-vec"] }
 num-traits = "0.2"
-rstar = "0.12"
+rstar = "0.13"
 rstared = "0.13"
 stable-vec = "0.4.2"
 undoredo = { workspace = true, optional = true }

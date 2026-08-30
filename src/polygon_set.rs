@@ -2,7 +2,8 @@
 //
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use std::marker::PhantomData;
+use alloc::vec::Vec;
+use core::marker::PhantomData;
 
 use maplike::{
     containers::Container,
@@ -14,8 +15,9 @@ use rstar::{
 };
 use rstared::AsRefRTree;
 use stable_vec::StableVec;
+
 #[cfg(feature = "undoredo")]
-use std::collections::BTreeMap;
+use alloc::collections::BTreeMap;
 #[cfg(feature = "undoredo")]
 use undoredo::{ApplyDelta, Delta, FlushDelta, Recorder};
 
@@ -125,7 +127,7 @@ impl<
         let neighbor_ids: Vec<PolygonId> = self
             .rtree
             .as_ref()
-            .locate_in_envelope_intersecting(&rectangle.envelope())
+            .locate_in_envelope_intersecting(rectangle.envelope())
             .map(|neighbor| neighbor.data)
             .collect();
 
@@ -196,7 +198,7 @@ impl<
         let neighbor_ids: Vec<PolygonId> = self
             .rtree
             .as_ref()
-            .locate_in_envelope_intersecting(&rectangle.envelope())
+            .locate_in_envelope_intersecting(rectangle.envelope())
             .map(|neighbor| neighbor.data)
             .collect();
 
@@ -266,12 +268,12 @@ impl<
         let clipped_ids: Vec<PolygonId> = self
             .rtree
             .as_ref()
-            .locate_in_envelope_intersecting(&rectangle.envelope())
+            .locate_in_envelope_intersecting(rectangle.envelope())
             .map(|neighbor| neighbor.data)
             .collect();
 
         let all_ids: Vec<PolygonId> = self.rtree.as_ref().iter().map(|item| item.data).collect();
-        let clipped_set: std::collections::BTreeSet<PolygonId> =
+        let clipped_set: alloc::collections::BTreeSet<PolygonId> =
             clipped_ids.iter().copied().collect();
         let outside_ids = all_ids
             .into_iter()
