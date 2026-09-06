@@ -2,7 +2,7 @@
 members = [".", "demos/*"]
 
 [workspace.dependencies]
-undoredo = { version = "0.13", features = ["derive", "rstar", "stable-vec"] }
+undoredo = { version = "0.15", features = ["derive", "rstar", "stable-vec"] }
 
 [package]
 name = "polygon_unionfind"
@@ -28,10 +28,9 @@ undoredo = ["dep:undoredo"]
 [dependencies]
 document-features = { version = "0.2", optional = true }
 i_overlay = "4.4"
-maplike = { version = "0.13", features = ["stable-vec"] }
+maplike = { version = "0.15", features = ["stable-vec", "rstar"] }
 num-traits = "0.2"
 rstar = "0.13"
-rstared = "0.13"
 stable-vec = "0.4.2"
 undoredo = { workspace = true, optional = true }
 

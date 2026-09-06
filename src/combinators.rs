@@ -4,7 +4,10 @@
 
 use alloc::vec::Vec;
 
-use maplike::{containers::Container, ops::Get};
+use maplike::{
+    abc::{Container, Keyed},
+    ops::Get,
+};
 
 use crate::{Add, Clip, Inflate, PolygonId, Sub};
 #[cfg(feature = "undoredo")]
@@ -59,9 +62,12 @@ impl<K: Clone, P: Clone + Inflate<K>, S: Sub<P>> Sub<P> for Inflated<S, K> {
     }
 }
 
-impl<I: Container, K> Container for Inflated<I, K> {
-    type Key = I::Key;
+impl<I: Keyed, K> Container for Inflated<I, K> {
     type Value = I::Value;
+}
+
+impl<I: Keyed, K> Keyed for Inflated<I, K> {
+    type Key = I::Key;
 }
 
 impl<I: Get<K2>, K, K2> Get<K2> for Inflated<I, K> {

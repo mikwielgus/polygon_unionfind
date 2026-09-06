@@ -4,7 +4,7 @@
 
 use alloc::vec::Vec;
 #[cfg(feature = "undoredo")]
-use maplike::containers::Container;
+use maplike::abc::Container;
 use maplike::ops::{Clear, Get, Push, Set};
 #[cfg(feature = "undoredo")]
 use undoredo::{ApplyDelta, Delta, FlushDelta};

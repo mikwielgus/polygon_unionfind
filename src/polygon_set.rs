@@ -6,14 +6,13 @@ use alloc::vec::Vec;
 use core::marker::PhantomData;
 
 use maplike::{
-    containers::Container,
+    abc::{Container, Keyed},
     ops::{Get, Insert, Push, Remove, Set},
 };
 use rstar::{
     RTree, RTreeNum, RTreeObject,
     primitives::{GeomWithData, Rectangle},
 };
-use rstared::AsRefRTree;
 use stable_vec::StableVec;
 
 #[cfg(feature = "undoredo")]
@@ -22,7 +21,7 @@ use alloc::collections::BTreeMap;
 use undoredo::{ApplyDelta, Delta, FlushDelta, Recorder};
 
 use crate::{
-    Add, Clip, Polygon, PolygonId, Rings, Sub,
+    Add, AsRefRTree, Clip, Polygon, PolygonId, Rings, Sub,
     bool_ops::{Difference, Intersection, Union},
     polygon::rectangle_from_polygon,
 };
@@ -53,8 +52,11 @@ impl<K, P, PC, PR> PolygonSet<K, P, PC, PR> {
 }
 
 impl<K, P, PC, PR> Container for PolygonSet<K, P, PC, PR> {
-    type Key = PolygonId;
     type Value = P;
+}
+
+impl<K, P, PC, PR> Keyed for PolygonSet<K, P, PC, PR> {
+    type Key = PolygonId;
 }
 
 impl<K, P, PC: Get<usize, Value = P>, PR> Get<PolygonId> for PolygonSet<K, P, PC, PR> {

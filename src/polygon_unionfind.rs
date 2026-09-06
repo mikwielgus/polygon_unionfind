@@ -8,7 +8,7 @@ use core::marker::PhantomData;
 #[cfg(feature = "undoredo")]
 use alloc::collections::BTreeMap;
 use maplike::{
-    containers::Container,
+    abc::{Container, Keyed},
     iter::IntoIter,
     ops::{Clear, Get, Insert, Push, Remove, Set},
 };
@@ -16,14 +16,13 @@ use rstar::{
     RTree, RTreeNum, RTreeObject,
     primitives::{GeomWithData, Rectangle},
 };
-use rstared::AsRefRTree;
 #[cfg(feature = "undoredo")]
 use undoredo::{ApplyDelta, Delta, FlushDelta, Recorder};
 
 use crate::bool_ops::Union;
 use crate::polygon::rectangle_from_polygon;
 use crate::unionfind::UnionFind;
-use crate::{Add, Rings};
+use crate::{Add, AsRefRTree, Rings};
 use crate::{Polygon, PolygonId};
 
 #[derive(Clone, Debug)]
@@ -70,8 +69,11 @@ impl<K, P, PC, PR, UFPC, UFRC> PolygonUnionFind<K, P, PC, PR, UFPC, UFRC> {
 }
 
 impl<K, P, PC, PR, UFPC, UFRC> Container for PolygonUnionFind<K, P, PC, PR, UFPC, UFRC> {
-    type Key = PolygonId;
     type Value = P;
+}
+
+impl<K, P, PC, PR, UFPC, UFRC> Keyed for PolygonUnionFind<K, P, PC, PR, UFPC, UFRC> {
+    type Key = PolygonId;
 }
 
 impl<
@@ -333,13 +335,13 @@ pub type PolygonUnionFindDelta<K, P = Polygon<K>> = Delta<PolygonUnionFindHalfDe
 impl<
     K: RTreeNum,
     P: Clone,
-    PE: Clone + Container<Value = P>,
-    PC: Container<Value = P> + Clone + ApplyDelta<PE>,
-    PRE: Clone + Container,
-    PR: Container + Clone + ApplyDelta<PRE>,
-    UFPCE: Clone + Container,
+    PE: Clone + Keyed<Value = P>,
+    PC: Keyed<Value = P> + Clone + ApplyDelta<PE>,
+    PRE: Clone + Keyed,
+    PR: Keyed + Clone + ApplyDelta<PRE>,
+    UFPCE: Clone + Keyed,
     UFPC: Clone + ApplyDelta<UFPCE>,
-    UFRCE: Clone + Container,
+    UFRCE: Clone + Keyed,
     UFRC: Clone + ApplyDelta<UFRCE>,
 > ApplyDelta<PolygonUnionFind<K, P, PE, PRE, UFPCE, UFRCE>>
     for PolygonUnionFind<K, P, PC, PR, UFPC, UFRC>
@@ -362,13 +364,13 @@ impl<
 impl<
     K: RTreeNum,
     P: Clone,
-    PE: Clone + Container<Value = P>,
-    PC: Container<Value = P> + FlushDelta<PE>,
-    PRE: Clone + Container,
-    PR: Container + FlushDelta<PRE>,
-    UFPCE: Clone + Container,
+    PE: Clone + Keyed<Value = P>,
+    PC: Keyed<Value = P> + FlushDelta<PE>,
+    PRE: Clone + Keyed,
+    PR: Keyed + FlushDelta<PRE>,
+    UFPCE: Clone + Keyed,
     UFPC: FlushDelta<UFPCE>,
-    UFRCE: Clone + Container,
+    UFRCE: Clone + Keyed,
     UFRC: FlushDelta<UFRCE>,
 > FlushDelta<PolygonUnionFind<K, P, PE, PRE, UFPCE, UFRCE>>
     for PolygonUnionFind<K, P, PC, PR, UFPC, UFRC>
