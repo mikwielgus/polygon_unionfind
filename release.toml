@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT OR Apache-2.0
 
+consolidate-commits = false
 pre-release-commit-message = "Release {{version}}"
 tag-name = "{{version}}"
 pre-release-replacements = [
