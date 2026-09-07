@@ -50,7 +50,7 @@ First, add `polygon_unionfind` as a dependency to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-polygon_unionfind = { version = "0.8.0", features = ["undoredo"] }
+polygon_unionfind = { version = "0.10.0", features = ["undoredo"] }
 ```
 
 If you don't need to perform undo and redo operations, you can remove the
