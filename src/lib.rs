@@ -14,7 +14,6 @@ extern crate alloc;
 
 mod as_ref;
 mod bool_ops;
-mod centroid;
 mod combinators;
 mod inflate;
 mod laminate;
@@ -25,7 +24,6 @@ mod unionfind;
 
 pub use as_ref::AsRefRTree;
 pub use bool_ops::{Difference, Intersection, Union};
-pub use centroid::Centroid;
 pub use combinators::{Inflated, Negated, Paralleled};
 #[cfg(feature = "undoredo")]
 pub use combinators::{RecordingInflated, RecordingNegated, RecordingParalleled};
