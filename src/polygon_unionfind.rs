@@ -268,7 +268,17 @@ impl<
         let bbox = rectangle_from_polygon(polygon);
         self.rtree.insert(GeomWithData::new(bbox, polygon_id), ());
     }
+}
 
+impl<
+    K,
+    P,
+    PC: Get<usize, Value = P>,
+    PR,
+    UFPC: Get<usize, Value = usize> + Push<usize> + Set<usize>,
+    UFRC: Get<usize, Value = usize> + Push<usize> + Set<usize>,
+> PolygonUnionFind<K, P, PC, PR, UFPC, UFRC>
+{
     /// Find the representative polygon for `index` without path compression.
     ///
     /// If you want to path compression to be performed, use [`find_compress()`]
@@ -291,7 +301,7 @@ impl<
     }
 }
 
-impl<K: RTreeNum, P, PC: Clear, PR: Clear, UFPC: Clear, UFRC: Clear>
+impl<K, P, PC: Clear, PR: Clear, UFPC: Clear, UFRC: Clear>
     PolygonUnionFind<K, P, PC, PR, UFPC, UFRC>
 {
     /// Remove all polygons and their relations.
@@ -333,7 +343,7 @@ pub type PolygonUnionFindDelta<K, P = Polygon<K>> = Delta<PolygonUnionFindHalfDe
 
 #[cfg(feature = "undoredo")]
 impl<
-    K: RTreeNum,
+    K,
     P: Clone,
     PE: Clone + Keyed<Value = P>,
     PC: Keyed<Value = P> + Clone + ApplyDelta<PE>,
@@ -362,7 +372,7 @@ impl<
 
 #[cfg(feature = "undoredo")]
 impl<
-    K: RTreeNum,
+    K,
     P: Clone,
     PE: Clone + Keyed<Value = P>,
     PC: Keyed<Value = P> + FlushDelta<PE>,

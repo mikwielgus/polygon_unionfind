@@ -33,7 +33,7 @@ pub type RecordingLamina<K, P = Polygon<K>> = Paralleled<Paralleled<RecordingNeg
 pub type RecordingInterlamina<K, P = Polygon<K>> = Paralleled<RecordingPolygonSet<K, P>>;
 
 #[derive(Clone)]
-pub struct Laminate<K: RTreeNum, P = Polygon<K>, L = Lamina<K, P>, T = Interlamina<K, P>> {
+pub struct Laminate<K, P = Polygon<K>, L = Lamina<K, P>, T = Interlamina<K, P>> {
     laminas: Vec<L>,
     interlaminas: Vec<T>,
     scalar_and_polygon_marker: PhantomData<(K, P)>,
@@ -77,7 +77,7 @@ where
     }
 }
 
-impl<K: RTreeNum, P, L, T> Laminate<K, P, L, T> {
+impl<K, P, L, T> Laminate<K, P, L, T> {
     #[inline]
     pub fn with_laminas_interlaminas(laminas: Vec<L>, interlaminas: Vec<T>) -> Self {
         assert!(
@@ -282,7 +282,7 @@ pub type LaminateHalfDelta<K, P, LE, TE> = Laminate<K, P, LE, TE>;
 pub type LaminateDelta<K, P, LE, TE> = Delta<LaminateHalfDelta<K, P, LE, TE>>;
 
 #[cfg(feature = "undoredo")]
-impl<K: RTreeNum, P, LE: Clone, L: Clone + ApplyDelta<LE>, TE: Clone, T: Clone + ApplyDelta<TE>>
+impl<K, P, LE: Clone, L: Clone + ApplyDelta<LE>, TE: Clone, T: Clone + ApplyDelta<TE>>
     ApplyDelta<LaminateHalfDelta<K, P, LE, TE>> for Laminate<K, P, L, T>
 {
     fn apply_delta(&mut self, delta: LaminateDelta<K, P, LE, TE>) {
@@ -317,7 +317,7 @@ impl<K: RTreeNum, P, LE: Clone, L: Clone + ApplyDelta<LE>, TE: Clone, T: Clone +
 }
 
 #[cfg(feature = "undoredo")]
-impl<K: RTreeNum, P, LE: Clone, L: FlushDelta<LE>, TE: Clone, T: FlushDelta<TE>>
+impl<K, P, LE: Clone, L: FlushDelta<LE>, TE: Clone, T: FlushDelta<TE>>
     FlushDelta<LaminateHalfDelta<K, P, LE, TE>> for Laminate<K, P, L, T>
 {
     fn flush_delta(&mut self) -> LaminateDelta<K, P, LE, TE> {
