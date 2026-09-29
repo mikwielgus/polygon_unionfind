@@ -12,7 +12,7 @@ use maplike::{
     iter::IntoIter,
     ops::{Clear, Get, Insert, Push, Remove, Set},
 };
-use rstar::{
+use rstared::rstar::{
     RTree, RTreeNum, RTreeObject,
     primitives::{GeomWithData, Rectangle},
 };

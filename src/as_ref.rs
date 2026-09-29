@@ -7,7 +7,7 @@ use core::convert::AsRef;
 use maplike::abc::{Container, Keyed};
 use maplike::iter::IntoIter;
 use maplike::ops::{Clear, Get, Insert, Remove, Set};
-use rstar::{RTree, RTreeObject};
+use rstared::rstar::{RTree, RTreeObject};
 
 #[derive(Clone, Debug)]
 pub struct AsRefRTree<T: RTreeObject> {

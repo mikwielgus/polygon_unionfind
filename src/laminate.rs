@@ -7,9 +7,9 @@ use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
 use maplike::ops::Get;
 
-use rstar::RTreeNum;
-use rstar::primitives::{GeomWithData, Rectangle};
-use rstar::{RTree, RTreeObject};
+use rstared::rstar::RTreeNum;
+use rstared::rstar::primitives::{GeomWithData, Rectangle};
+use rstared::rstar::{RTree, RTreeObject};
 #[cfg(feature = "undoredo")]
 use undoredo::{ApplyDelta, Delta, FlushDelta};
 

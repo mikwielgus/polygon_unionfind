@@ -4,7 +4,7 @@
 
 use alloc::vec::Vec;
 use core::{iter::Map, slice::Iter};
-use rstar::{AABB, Envelope, RTreeNum, primitives::Rectangle};
+use rstared::rstar::{AABB, Envelope, RTreeNum, primitives::Rectangle};
 
 pub trait Rings<K> {
     type RingIter<'a>: Iterator<Item = &'a [[K; 2]]>
