@@ -9,7 +9,7 @@ use maplike::{
     abc::{Container, Keyed},
     ops::{Get, Insert, Push, Remove, Set},
 };
-use rstared::rstar::{
+use rstared::{
     RTree, RTreeNum, RTreeObject,
     primitives::{GeomWithData, Rectangle},
 };

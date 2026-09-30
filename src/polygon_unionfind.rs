@@ -12,7 +12,7 @@ use maplike::{
     iter::IntoIter,
     ops::{Clear, Get, Insert, Push, Remove, Set},
 };
-use rstared::rstar::{
+use rstared::{
     RTree, RTreeNum, RTreeObject,
     primitives::{GeomWithData, Rectangle},
 };
@@ -200,7 +200,7 @@ impl<
 
         let bbox = rectangle_from_polygon(&polygon);
         self.rtree.insert(
-            GeomWithData::new(bbox, PolygonId::new(new_polygon_index)),
+            GeomWithData::new(bbox.clone(), PolygonId::new(new_polygon_index)),
             (),
         );
 

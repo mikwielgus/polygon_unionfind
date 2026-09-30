@@ -4,7 +4,7 @@
 
 use alloc::vec::Vec;
 use core::{iter::Map, slice::Iter};
-use rstared::rstar::{AABB, Envelope, RTreeNum, primitives::Rectangle};
+use rstared::{AABB, Envelope, RTreeNum, primitives::Rectangle};
 
 pub trait Rings<K> {
     type RingIter<'a>: Iterator<Item = &'a [[K; 2]]>
@@ -22,7 +22,7 @@ pub(crate) fn rectangle_from_polygon<K: RTreeNum, P: Rings<K>>(polygon: &P) -> R
             .exterior()
             .iter()
             .fold(AABB::new_empty(), |aabb, vertex| {
-                aabb.merged(&AABB::from_point([vertex[0], vertex[1]]))
+                aabb.merged(&AABB::from_point([vertex[0].clone(), vertex[1].clone()]))
             }),
     )
 }
