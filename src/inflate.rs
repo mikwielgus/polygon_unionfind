@@ -4,6 +4,7 @@
 
 use alloc::vec::Vec;
 use i_overlay::mesh::{outline::offset::OutlineOffset, style::OutlineStyle};
+use numlike::fns::Round;
 
 use crate::{Polygon, PolygonWithData};
 

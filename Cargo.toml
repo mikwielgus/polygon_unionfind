@@ -34,7 +34,7 @@ undoredo = ["dep:undoredo", "rstared/undoredo"]
 document-features = { version = "0.2", optional = true }
 i_overlay = "4.4"
 maplike = { version = "0.15", default-features = false, features = ["stable-vec"] }
-numlike = { version = "0.6", default-features = false }
+numlike = { version = "0.6", default-features = false, features = ["libm"] }
 rstared = { version = "0.15", default-features = false }
 stable-vec = "0.4.2"
 undoredo = { workspace = true, optional = true }
