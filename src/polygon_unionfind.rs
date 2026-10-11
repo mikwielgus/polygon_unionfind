@@ -22,7 +22,7 @@ use undoredo::{ApplyDelta, Delta, FlushDelta, Recorder};
 use crate::bool_ops::Union;
 use crate::polygon::rectangle_from_polygon;
 use crate::unionfind::UnionFind;
-use crate::{Add, AsRefRTree, Rings};
+use crate::{Add, Rings};
 use crate::{Polygon, PolygonId};
 
 #[derive(Clone, Debug)]
@@ -30,7 +30,7 @@ pub struct PolygonUnionFind<
     K,
     P = Polygon<K>,
     PC = Vec<P>,
-    PR = AsRefRTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>,
+    PR = RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>,
     UFPC = Vec<usize>,
     UFRC = Vec<usize>,
 > {

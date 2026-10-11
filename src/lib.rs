@@ -12,7 +12,6 @@
 // No feature for `alloc` because it would be always enabled anyway.
 extern crate alloc;
 
-mod as_ref;
 mod bool_ops;
 mod combinators;
 mod inflate;
@@ -22,7 +21,6 @@ mod polygon_set;
 mod polygon_unionfind;
 mod unionfind;
 
-pub use as_ref::AsRefRTree;
 pub use bool_ops::{Difference, Intersection, Union};
 pub use combinators::{Inflated, Negated, Paralleled};
 #[cfg(feature = "undoredo")]

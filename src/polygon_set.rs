@@ -21,7 +21,7 @@ use alloc::collections::BTreeMap;
 use undoredo::{ApplyDelta, Delta, FlushDelta, Recorder};
 
 use crate::{
-    Add, AsRefRTree, Clip, Polygon, PolygonId, Rings, Sub,
+    Add, Clip, Polygon, PolygonId, Rings, Sub,
     bool_ops::{Difference, Intersection, Union},
     polygon::rectangle_from_polygon,
 };
@@ -31,7 +31,7 @@ pub struct PolygonSet<
     K,
     P = Polygon<K>,
     PC = StableVec<P>,
-    PR = AsRefRTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>,
+    PR = RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>,
 > {
     polygons: PC,
     rtree: PR,

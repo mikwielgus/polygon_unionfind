@@ -26,7 +26,7 @@ pub trait Difference<T> {
     fn difference(subj: T, clip: T) -> Vec<T>;
 }
 
-/// Output format: `[exterior, interiors..]`.
+/// Output contour order: `[exterior, interiors..]`.
 fn rings_to_shape<K, P: Rings<K>>(polygon: &P) -> Vec<Vec<[K; 2]>>
 where
     K: Clone,
@@ -37,7 +37,7 @@ where
     shape
 }
 
-/// Output format on success: `[exterior, interiors..]`.
+/// Output contour order on success: `[exterior, interiors..]`.
 fn rings_to_int_shape<K, X: Rings<K>>(polygon: &X) -> Option<IntShape>
 where
     K: Copy,
