@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT OR Apache-2.0
 
 [package]
-name = "layers_with_transitions_demo"
+name = "laminate_demo"
 version = "0.1.0"
 edition = "2024"
 
