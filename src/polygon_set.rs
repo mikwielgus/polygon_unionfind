@@ -291,7 +291,7 @@ impl<
 
         for polygon_id in clipped_ids {
             let current = self.polygons.get(&polygon_id.index()).unwrap().clone();
-            let intersections = P::intersect(current, polygon.clone());
+            let intersections = P::intersection(current, polygon.clone());
 
             if intersections.is_empty() {
                 self.remove_polygon_from_rtree(polygon_id);

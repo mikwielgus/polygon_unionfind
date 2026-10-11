@@ -19,14 +19,14 @@ pub trait Union<T> {
 }
 
 pub trait Intersection<T> {
-    fn intersect(subj: T, clip: T) -> Vec<T>;
+    fn intersection(subj: T, clip: T) -> Vec<T>;
 }
 
 pub trait Difference<T> {
     fn difference(subj: T, clip: T) -> Vec<T>;
 }
 
-/// Output format on success: `[exterior, interiors..]`
+/// Output format: `[exterior, interiors..]`.
 fn rings_to_shape<K, P: Rings<K>>(polygon: &P) -> Vec<Vec<[K; 2]>>
 where
     K: Clone,
@@ -37,7 +37,7 @@ where
     shape
 }
 
-/// Output format on success: `[exterior, interiors..]`
+/// Output format on success: `[exterior, interiors..]`.
 fn rings_to_int_shape<K, X: Rings<K>>(polygon: &X) -> Option<IntShape>
 where
     K: Copy,
@@ -223,10 +223,10 @@ macro_rules! impl_union_int {
     };
 }
 
-macro_rules! impl_intersect_float {
+macro_rules! impl_intersection_float {
     ($k:ty) => {
         impl Intersection<Polygon<$k>> for Polygon<$k> {
-            fn intersect(a: Polygon<$k>, b: Polygon<$k>) -> Vec<Polygon<$k>> {
+            fn intersection(a: Polygon<$k>, b: Polygon<$k>) -> Vec<Polygon<$k>> {
                 let subj_shape = rings_to_shape(&a);
                 let clip_shape = rings_to_shape(&b);
                 let result =
@@ -242,7 +242,7 @@ macro_rules! impl_intersect_float {
         }
 
         impl<W: Clone> Intersection<PolygonWithData<$k, W>> for PolygonWithData<$k, W> {
-            fn intersect(
+            fn intersection(
                 a: PolygonWithData<$k, W>,
                 b: PolygonWithData<$k, W>,
             ) -> Vec<PolygonWithData<$k, W>> {
@@ -263,10 +263,10 @@ macro_rules! impl_intersect_float {
     };
 }
 
-macro_rules! impl_intersect_int {
+macro_rules! impl_intersection_int {
     ($k:ty) => {
         impl Intersection<Polygon<$k>> for Polygon<$k> {
-            fn intersect(a: Polygon<$k>, b: Polygon<$k>) -> Vec<Polygon<$k>> {
+            fn intersection(a: Polygon<$k>, b: Polygon<$k>) -> Vec<Polygon<$k>> {
                 overlay_int_polygons_many(&a, &b, OverlayRule::Intersect)
                     .unwrap_or_default()
                     .into_iter()
@@ -279,7 +279,7 @@ macro_rules! impl_intersect_int {
         }
 
         impl<W: Clone> Intersection<PolygonWithData<$k, W>> for PolygonWithData<$k, W> {
-            fn intersect(
+            fn intersection(
                 a: PolygonWithData<$k, W>,
                 b: PolygonWithData<$k, W>,
             ) -> Vec<PolygonWithData<$k, W>> {
@@ -383,12 +383,12 @@ impl_union_int!(i16);
 impl_union_int!(i32);
 //impl_union_int!(i64);
 
-impl_intersect_float!(f32);
-impl_intersect_float!(f64);
-impl_intersect_int!(i8);
-impl_intersect_int!(i16);
-impl_intersect_int!(i32);
-//impl_intersect_int!(i64);
+impl_intersection_float!(f32);
+impl_intersection_float!(f64);
+impl_intersection_int!(i8);
+impl_intersection_int!(i16);
+impl_intersection_int!(i32);
+//impl_intersection_int!(i64);
 
 impl_difference_float!(f32);
 impl_difference_float!(f64);

@@ -247,7 +247,7 @@ where
             let mut has_intersection = false;
 
             for clipping_polygon in &clipping_polygons {
-                for piece in P::intersect(interpolygon.clone(), clipping_polygon.clone()) {
+                for piece in P::intersection(interpolygon.clone(), clipping_polygon.clone()) {
                     has_intersection = true;
                     let _ = clipped_union.add(piece);
                 }
