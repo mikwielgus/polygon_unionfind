@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2026 polygon_unionfind contributors
+
+SPDX-License-Identifier: MIT OR Apache-2.0
+-->
+
 # polygon_unionfind
 
 [![Repository](https://img.shields.io/badge/repository-GitHub-0FBF3E)](https://github.com/mikwielgus/multi_bimap)
