@@ -7,7 +7,6 @@ use core::{convert::TryFrom, slice};
 
 use i_overlay::{
     core::{fill_rule::FillRule, overlay::Overlay, overlay_rule::OverlayRule},
-    float::single::SingleFloatOverlay,
     i_float::int::point::IntPoint,
     i_shape::int::shape::IntShape,
 };
@@ -26,17 +25,6 @@ pub trait Difference<T> {
     fn difference(subj: T, clip: T) -> Vec<T>;
 }
 
-/// Output contour order: `[exterior, interiors..]`.
-fn rings_to_shape<K, P: Rings<K>>(polygon: &P) -> Vec<Vec<[K; 2]>>
-where
-    K: Clone,
-{
-    let mut shape = Vec::with_capacity(1 + polygon.interiors().count());
-    shape.push(polygon.exterior().to_vec());
-    shape.extend(polygon.interiors().map(<[_]>::to_vec));
-    shape
-}
-
 /// Output contour order on success: `[exterior, interiors..]`.
 fn rings_to_int_shape<K, X: Rings<K>>(polygon: &X) -> Option<IntShape>
 where
@@ -49,33 +37,6 @@ where
         shape.push(to_int_ring(ring)?);
     }
     Some(shape)
-}
-
-fn first_merged_shape<K>(union: Vec<Vec<Vec<[K; 2]>>>) -> Option<(Vec<[K; 2]>, Vec<Vec<[K; 2]>>)> {
-    if union.len() >= 2 {
-        return None;
-    }
-
-    let mut merged_shape = union.into_iter().next()?;
-    if merged_shape.is_empty() {
-        return None;
-    }
-
-    let exterior = merged_shape.remove(0);
-    Some((exterior, merged_shape))
-}
-
-fn all_merged_shapes<K>(shapes: Vec<Vec<Vec<[K; 2]>>>) -> Vec<(Vec<[K; 2]>, Vec<Vec<[K; 2]>>)> {
-    shapes
-        .into_iter()
-        .filter_map(|mut shape| {
-            if shape.is_empty() {
-                return None;
-            }
-            let exterior = shape.remove(0);
-            Some((exterior, shape))
-        })
-        .collect()
 }
 
 fn to_int_ring<K>(ring: &[[K; 2]]) -> Option<Vec<IntPoint>>
@@ -161,41 +122,7 @@ where
         .collect()
 }
 
-macro_rules! impl_union_float {
-    ($k:ty) => {
-        impl Union<Polygon<$k>> for Polygon<$k> {
-            fn union(a: Polygon<$k>, b: Polygon<$k>) -> Option<Polygon<$k>> {
-                let subj_shape = rings_to_shape(&a);
-                let clip_shape = rings_to_shape(&b);
-                let result = subj_shape.overlay(&clip_shape, OverlayRule::Union, FillRule::EvenOdd);
-                let (exterior, interiors) = first_merged_shape(result)?;
-                Some(Polygon {
-                    exterior,
-                    interiors,
-                })
-            }
-        }
-
-        impl<W> Union<PolygonWithData<$k, W>> for PolygonWithData<$k, W> {
-            fn union(
-                a: PolygonWithData<$k, W>,
-                b: PolygonWithData<$k, W>,
-            ) -> Option<PolygonWithData<$k, W>> {
-                let subj_shape = rings_to_shape(&a);
-                let clip_shape = rings_to_shape(&b);
-                let result = subj_shape.overlay(&clip_shape, OverlayRule::Union, FillRule::EvenOdd);
-                let (exterior, interiors) = first_merged_shape(result)?;
-                Some(PolygonWithData {
-                    exterior,
-                    interiors,
-                    data: a.data,
-                })
-            }
-        }
-    };
-}
-
-macro_rules! impl_union_int {
+macro_rules! impl_union {
     ($k:ty) => {
         impl Union<Polygon<$k>> for Polygon<$k> {
             fn union(a: Polygon<$k>, b: Polygon<$k>) -> Option<Polygon<$k>> {
@@ -223,47 +150,7 @@ macro_rules! impl_union_int {
     };
 }
 
-macro_rules! impl_intersection_float {
-    ($k:ty) => {
-        impl Intersection<Polygon<$k>> for Polygon<$k> {
-            fn intersection(a: Polygon<$k>, b: Polygon<$k>) -> Vec<Polygon<$k>> {
-                let subj_shape = rings_to_shape(&a);
-                let clip_shape = rings_to_shape(&b);
-                let result =
-                    subj_shape.overlay(&clip_shape, OverlayRule::Intersect, FillRule::EvenOdd);
-                all_merged_shapes(result)
-                    .into_iter()
-                    .map(|(exterior, interiors)| Polygon {
-                        exterior,
-                        interiors,
-                    })
-                    .collect()
-            }
-        }
-
-        impl<W: Clone> Intersection<PolygonWithData<$k, W>> for PolygonWithData<$k, W> {
-            fn intersection(
-                a: PolygonWithData<$k, W>,
-                b: PolygonWithData<$k, W>,
-            ) -> Vec<PolygonWithData<$k, W>> {
-                let subj_shape = rings_to_shape(&a);
-                let clip_shape = rings_to_shape(&b);
-                let result =
-                    subj_shape.overlay(&clip_shape, OverlayRule::Intersect, FillRule::EvenOdd);
-                all_merged_shapes(result)
-                    .into_iter()
-                    .map(|(exterior, interiors)| PolygonWithData {
-                        exterior,
-                        interiors,
-                        data: a.data.clone(),
-                    })
-                    .collect()
-            }
-        }
-    };
-}
-
-macro_rules! impl_intersection_int {
+macro_rules! impl_intersection {
     ($k:ty) => {
         impl Intersection<Polygon<$k>> for Polygon<$k> {
             fn intersection(a: Polygon<$k>, b: Polygon<$k>) -> Vec<Polygon<$k>> {
@@ -297,47 +184,7 @@ macro_rules! impl_intersection_int {
     };
 }
 
-macro_rules! impl_difference_float {
-    ($k:ty) => {
-        impl Difference<Polygon<$k>> for Polygon<$k> {
-            fn difference(a: Polygon<$k>, b: Polygon<$k>) -> Vec<Polygon<$k>> {
-                let subj_shape = rings_to_shape(&a);
-                let clip_shape = rings_to_shape(&b);
-                let result =
-                    subj_shape.overlay(&clip_shape, OverlayRule::Difference, FillRule::EvenOdd);
-                all_merged_shapes(result)
-                    .into_iter()
-                    .map(|(exterior, interiors)| Polygon {
-                        exterior,
-                        interiors,
-                    })
-                    .collect()
-            }
-        }
-
-        impl<W: Clone> Difference<PolygonWithData<$k, W>> for PolygonWithData<$k, W> {
-            fn difference(
-                a: PolygonWithData<$k, W>,
-                b: PolygonWithData<$k, W>,
-            ) -> Vec<PolygonWithData<$k, W>> {
-                let subj_shape = rings_to_shape(&a);
-                let clip_shape = rings_to_shape(&b);
-                let result =
-                    subj_shape.overlay(&clip_shape, OverlayRule::Difference, FillRule::EvenOdd);
-                all_merged_shapes(result)
-                    .into_iter()
-                    .map(|(exterior, interiors)| PolygonWithData {
-                        exterior,
-                        interiors,
-                        data: a.data.clone(),
-                    })
-                    .collect()
-            }
-        }
-    };
-}
-
-macro_rules! impl_difference_int {
+macro_rules! impl_difference {
     ($k:ty) => {
         impl Difference<Polygon<$k>> for Polygon<$k> {
             fn difference(a: Polygon<$k>, b: Polygon<$k>) -> Vec<Polygon<$k>> {
@@ -376,23 +223,17 @@ macro_rules! impl_difference_int {
 // fact, `i_overlay`'s author treats `|coord| < 2^29` as a safe bound, which
 // narrower than even the `i32` range (`-2^31` to `2^31-1`).
 
-impl_union_float!(f32);
-impl_union_float!(f64);
-impl_union_int!(i8);
-impl_union_int!(i16);
-impl_union_int!(i32);
+impl_union!(i8);
+impl_union!(i16);
+impl_union!(i32);
 //impl_union_int!(i64);
 
-impl_intersection_float!(f32);
-impl_intersection_float!(f64);
-impl_intersection_int!(i8);
-impl_intersection_int!(i16);
-impl_intersection_int!(i32);
+impl_intersection!(i8);
+impl_intersection!(i16);
+impl_intersection!(i32);
 //impl_intersection_int!(i64);
 
-impl_difference_float!(f32);
-impl_difference_float!(f64);
-impl_difference_int!(i8);
-impl_difference_int!(i16);
-impl_difference_int!(i32);
+impl_difference!(i8);
+impl_difference!(i16);
+impl_difference!(i32);
 //impl_difference_int!(i64);

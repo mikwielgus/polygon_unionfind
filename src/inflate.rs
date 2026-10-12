@@ -57,26 +57,6 @@ where
     }
 }
 
-macro_rules! impl_inflate_float {
-    ($k:ty) => {
-        impl Inflate<$k> for Polygon<$k> {
-            fn inflate(self, offset: $k) -> Self {
-                let shape = shape_from_rings(self.exterior, self.interiors);
-                let buffered = shape.outline(&OutlineStyle::new(offset));
-
-                let (exterior, interiors) = first_inflated_shape(buffered)
-                    .or_else(|| rings_from_shape(shape))
-                    .unwrap_or_default();
-
-                Polygon {
-                    exterior,
-                    interiors,
-                }
-            }
-        }
-    };
-}
-
 fn inflate_int_shape<K>(
     shape: Vec<Vec<[K; 2]>>,
     offset: K,
@@ -125,7 +105,7 @@ where
     Some((exterior, interiors))
 }
 
-macro_rules! impl_inflate_int {
+macro_rules! impl_inflate {
     ($k:ty) => {
         impl Inflate<$k> for Polygon<$k> {
             fn inflate(self, offset: $k) -> Self {
@@ -143,9 +123,7 @@ macro_rules! impl_inflate_int {
     };
 }
 
-impl_inflate_float!(f32);
-impl_inflate_float!(f64);
-impl_inflate_int!(i8);
-impl_inflate_int!(i16);
-impl_inflate_int!(i32);
-impl_inflate_int!(i64);
+impl_inflate!(i8);
+impl_inflate!(i16);
+impl_inflate!(i32);
+impl_inflate!(i64);
