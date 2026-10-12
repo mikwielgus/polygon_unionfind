@@ -21,6 +21,18 @@ mod polygon_set;
 mod polygon_unionfind;
 mod unionfind;
 
+use numlike::{
+    alg::PofieldBundle,
+    convert::{DequantizeFrom, QuantizeInto},
+    limits::ExtendedBounds,
+};
+
+pub trait Scalar: ExtendedBounds + PofieldBundle + DequantizeFrom<i32> + QuantizeInto<i32> {}
+impl<T> Scalar for T where
+    T: ExtendedBounds + PofieldBundle + DequantizeFrom<i32> + QuantizeInto<i32>
+{
+}
+
 pub use bool_ops::{Difference, Intersection, Union};
 pub use combinators::{Inflated, Negated, Paralleled};
 #[cfg(feature = "undoredo")]

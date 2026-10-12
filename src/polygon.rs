@@ -4,7 +4,9 @@
 
 use alloc::vec::Vec;
 use core::{iter::Map, slice::Iter};
-use rstared::{AABB, Envelope, RTreeNum, primitives::Rectangle};
+use rstared::{AABB, Envelope, primitives::Rectangle};
+
+use crate::Scalar;
 
 pub trait Rings<K> {
     type RingIter<'a>: Iterator<Item = &'a [[K; 2]]>
@@ -16,7 +18,7 @@ pub trait Rings<K> {
     fn interiors<'a>(&'a self) -> Self::RingIter<'a>;
 }
 
-pub(crate) fn rectangle_from_polygon<K: RTreeNum, P: Rings<K>>(polygon: &P) -> Rectangle<[K; 2]> {
+pub(crate) fn rectangle_from_polygon<K: Scalar, P: Rings<K>>(polygon: &P) -> Rectangle<[K; 2]> {
     Rectangle::from_aabb(
         polygon
             .exterior()

@@ -10,7 +10,7 @@ use maplike::{
     ops::{Get, Insert, Push, Remove, Set},
 };
 use rstared::{
-    RTree, RTreeNum, RTreeObject,
+    RTree, RTreeObject,
     primitives::{GeomWithData, Rectangle},
 };
 use stable_vec::StableVec;
@@ -21,7 +21,7 @@ use alloc::collections::BTreeMap;
 use undoredo::{ApplyDelta, Delta, FlushDelta, Recorder};
 
 use crate::{
-    Add, Clip, Polygon, PolygonId, Rings, Sub,
+    Add, Clip, Polygon, PolygonId, Rings, Scalar, Sub,
     bool_ops::{Difference, Intersection, Union},
     polygon::rectangle_from_polygon,
 };
@@ -67,7 +67,7 @@ impl<K, P, PC: Get<usize, Value = P>, PR> Get<PolygonId> for PolygonSet<K, P, PC
 }
 
 impl<
-    K: RTreeNum,
+    K: Scalar,
     P,
     PC: Get<usize, Value = P>,
     PR: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>>,
@@ -100,7 +100,7 @@ impl<K, P, PC: Default, PR: Default> Default for PolygonSet<K, P, PC, PR> {
 }
 
 impl<
-    K: RTreeNum,
+    K: Scalar,
     P: Clone + Rings<K> + Union<P>,
     PC: Get<usize, Value = P> + Push<usize> + Remove<usize> + Set<usize>,
     PR: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>>
@@ -116,7 +116,7 @@ impl<
 }
 
 impl<
-    K: RTreeNum,
+    K: Scalar,
     P: Clone + Rings<K> + Union<P>,
     PC: Get<usize, Value = P> + Push<usize> + Remove<usize> + Set<usize>,
     PR: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>>
@@ -171,7 +171,7 @@ impl<
 }
 
 impl<
-    K: RTreeNum,
+    K: Scalar,
     P: Clone + Rings<K> + Difference<P>,
     PC: Get<usize, Value = P> + Push<usize> + Remove<usize> + Set<usize>,
     PR: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>>
@@ -187,7 +187,7 @@ impl<
 }
 
 impl<
-    K: RTreeNum,
+    K: Scalar,
     P: Clone + Rings<K> + Difference<P>,
     PC: Get<usize, Value = P> + Push<usize> + Remove<usize> + Set<usize>,
     PR: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>>
@@ -241,7 +241,7 @@ impl<
 }
 
 impl<
-    K: RTreeNum,
+    K: Scalar,
     P: Clone + Rings<K> + Intersection<P>,
     PC: Get<usize, Value = P> + Push<usize> + Remove<usize> + Set<usize>,
     PR: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>>
@@ -257,7 +257,7 @@ impl<
 }
 
 impl<
-    K: RTreeNum,
+    K: Scalar,
     P: Clone + Rings<K> + Intersection<P>,
     PC: Get<usize, Value = P> + Push<usize> + Remove<usize> + Set<usize>,
     PR: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>>
@@ -318,7 +318,7 @@ impl<
 }
 
 impl<
-    K: RTreeNum,
+    K: Scalar,
     P: Clone + Rings<K>,
     PC,
     PR: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>>

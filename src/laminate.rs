@@ -7,7 +7,6 @@ use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
 use maplike::ops::Get;
 
-use rstared::RTreeNum;
 use rstared::primitives::{GeomWithData, Rectangle};
 use rstared::{RTree, RTreeObject};
 #[cfg(feature = "undoredo")]
@@ -17,7 +16,7 @@ use crate::Polygon;
 use crate::bool_ops::{Difference, Intersection, Union};
 use crate::{
     Add, Inflate, Inflated, Negated, Paralleled, PolygonId, PolygonSet, PolygonUnionFind, Rings,
-    Sub, polygon::rectangle_from_polygon,
+    Scalar, Sub, polygon::rectangle_from_polygon,
 };
 #[cfg(feature = "undoredo")]
 use crate::{RecordingNegated, RecordingPolygonSet};
@@ -41,7 +40,7 @@ pub struct Laminate<K, P = Polygon<K>, L = Lamina<K, P>, T = Interlamina<K, P>> 
 
 impl<K, P> Laminate<K, P>
 where
-    K: RTreeNum + Default,
+    K: Scalar + Default,
     P: Clone + Rings<K> + Union<P> + Difference<P>,
 {
     pub fn new<PI>(
@@ -118,7 +117,7 @@ fn lamina_from_boundary<K, P>(
     rail_offsets: &[K],
 ) -> Lamina<K, P>
 where
-    K: RTreeNum + Default,
+    K: Scalar + Default,
     P: Clone + Rings<K> + Union<P> + Difference<P>,
 {
     let make_negated =
@@ -145,7 +144,7 @@ where
 
 impl<K, P, M, SI, PS> Laminate<K, P, Paralleled<Paralleled<Negated<M, SI>>>, Paralleled<PS>>
 where
-    K: RTreeNum + Ord,
+    K: Scalar + Ord,
     P: Clone + Rings<K> + Inflate<K> + Union<P> + Difference<P> + Intersection<P>,
     M: Get<PolygonId, Value = P>,
     PS: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>> + Get<PolygonId, Value = P>,

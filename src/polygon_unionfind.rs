@@ -13,7 +13,7 @@ use maplike::{
     ops::{Clear, Get, Insert, Push, Remove, Set},
 };
 use rstared::{
-    RTree, RTreeNum, RTreeObject,
+    RTree, RTreeObject,
     primitives::{GeomWithData, Rectangle},
 };
 #[cfg(feature = "undoredo")]
@@ -22,7 +22,7 @@ use undoredo::{ApplyDelta, Delta, FlushDelta, Recorder};
 use crate::bool_ops::Union;
 use crate::polygon::rectangle_from_polygon;
 use crate::unionfind::UnionFind;
-use crate::{Add, Rings};
+use crate::{Add, Rings, Scalar};
 use crate::{Polygon, PolygonId};
 
 #[derive(Clone, Debug)]
@@ -92,7 +92,7 @@ impl<
     }
 }
 
-impl<K: RTreeNum, P, PC, PR: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>>, UFPC, UFRC>
+impl<K: Scalar, P, PC, PR: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>>, UFPC, UFRC>
     AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>>
     for PolygonUnionFind<K, P, PC, PR, UFPC, UFRC>
 {
@@ -163,7 +163,7 @@ where
 }
 
 impl<
-    K: RTreeNum,
+    K: Scalar,
     P: Clone + Rings<K> + Union<P>,
     PC: Get<usize, Value = P> + Push<usize> + Set<usize>,
     PR: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>>
@@ -181,7 +181,7 @@ impl<
 }
 
 impl<
-    K: RTreeNum,
+    K: Scalar,
     P: Clone + Rings<K> + Union<P>,
     PC: Get<usize, Value = P> + Push<usize> + Set<usize>,
     PR: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>>
