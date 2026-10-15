@@ -21,7 +21,7 @@ use alloc::collections::BTreeMap;
 use undoredo::{ApplyDelta, Delta, FlushDelta, Recorder};
 
 use crate::{
-    Add, Clip, Polygon, PolygonId, Rings, Scalar, Sub,
+    Add, Clip, Contours, Polygon, PolygonId, Scalar, Sub,
     bool_ops::{Difference, Intersection, Union},
     polygon::rectangle_from_polygon,
 };
@@ -101,7 +101,7 @@ impl<K, P, PC: Default, PR: Default> Default for PolygonSet<K, P, PC, PR> {
 
 impl<
     K: Scalar,
-    P: Clone + Rings<K> + Union<P>,
+    P: Clone + Contours<K> + Union<P>,
     PC: Get<usize, Value = P> + Push<usize> + Remove<usize> + Set<usize>,
     PR: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>>
         + Insert<GeomWithData<Rectangle<[K; 2]>, PolygonId>, Value = ()>
@@ -117,7 +117,7 @@ impl<
 
 impl<
     K: Scalar,
-    P: Clone + Rings<K> + Union<P>,
+    P: Clone + Contours<K> + Union<P>,
     PC: Get<usize, Value = P> + Push<usize> + Remove<usize> + Set<usize>,
     PR: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>>
         + Insert<GeomWithData<Rectangle<[K; 2]>, PolygonId>, Value = ()>
@@ -172,7 +172,7 @@ impl<
 
 impl<
     K: Scalar,
-    P: Clone + Rings<K> + Difference<P>,
+    P: Clone + Contours<K> + Difference<P>,
     PC: Get<usize, Value = P> + Push<usize> + Remove<usize> + Set<usize>,
     PR: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>>
         + Insert<GeomWithData<Rectangle<[K; 2]>, PolygonId>, Value = ()>
@@ -188,7 +188,7 @@ impl<
 
 impl<
     K: Scalar,
-    P: Clone + Rings<K> + Difference<P>,
+    P: Clone + Contours<K> + Difference<P>,
     PC: Get<usize, Value = P> + Push<usize> + Remove<usize> + Set<usize>,
     PR: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>>
         + Insert<GeomWithData<Rectangle<[K; 2]>, PolygonId>, Value = ()>
@@ -242,7 +242,7 @@ impl<
 
 impl<
     K: Scalar,
-    P: Clone + Rings<K> + Intersection<P>,
+    P: Clone + Contours<K> + Intersection<P>,
     PC: Get<usize, Value = P> + Push<usize> + Remove<usize> + Set<usize>,
     PR: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>>
         + Insert<GeomWithData<Rectangle<[K; 2]>, PolygonId>, Value = ()>
@@ -258,7 +258,7 @@ impl<
 
 impl<
     K: Scalar,
-    P: Clone + Rings<K> + Intersection<P>,
+    P: Clone + Contours<K> + Intersection<P>,
     PC: Get<usize, Value = P> + Push<usize> + Remove<usize> + Set<usize>,
     PR: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>>
         + Insert<GeomWithData<Rectangle<[K; 2]>, PolygonId>, Value = ()>
@@ -319,7 +319,7 @@ impl<
 
 impl<
     K: Scalar,
-    P: Clone + Rings<K>,
+    P: Clone + Contours<K>,
     PC,
     PR: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>>
         + Insert<GeomWithData<Rectangle<[K; 2]>, PolygonId>, Value = ()>

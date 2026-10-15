@@ -11,7 +11,7 @@ use i_overlay::{
     i_shape::int::shape::IntShape,
 };
 
-use crate::{Polygon, PolygonWithData, Rings};
+use crate::{Contours, Polygon, PolygonWithData};
 
 pub trait Union<T> {
     fn union(subj: T, clip: T) -> Option<T>;
@@ -26,7 +26,7 @@ pub trait Difference<T> {
 }
 
 /// Output contour order on success: `[exterior, interiors..]`.
-fn rings_to_int_shape<K, X: Rings<K>>(polygon: &X) -> Option<IntShape<i32>>
+fn rings_to_int_shape<K, X: Contours<K>>(polygon: &X) -> Option<IntShape<i32>>
 where
     K: Copy,
     i32: TryFrom<K>,
@@ -63,7 +63,7 @@ where
         .collect()
 }
 
-fn overlay_int_polygons<K, A: Rings<K>, B: Rings<K>>(
+fn overlay_int_polygons<K, A: Contours<K>, B: Contours<K>>(
     a: &A,
     b: &B,
     overlay_rule: OverlayRule,
@@ -96,7 +96,7 @@ where
     Some((exterior, interiors))
 }
 
-fn overlay_int_polygons_many<K, A: Rings<K>, B: Rings<K>>(
+fn overlay_int_polygons_many<K, A: Contours<K>, B: Contours<K>>(
     a: &A,
     b: &B,
     overlay_rule: OverlayRule,

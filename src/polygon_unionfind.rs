@@ -22,7 +22,7 @@ use undoredo::{ApplyDelta, Delta, FlushDelta, Recorder};
 use crate::bool_ops::Union;
 use crate::polygon::rectangle_from_polygon;
 use crate::unionfind::UnionFind;
-use crate::{Add, Rings, Scalar};
+use crate::{Add, Contours, Scalar};
 use crate::{Polygon, PolygonId};
 
 #[derive(Clone, Debug)]
@@ -164,7 +164,7 @@ where
 
 impl<
     K: Scalar,
-    P: Clone + Rings<K> + Union<P>,
+    P: Clone + Contours<K> + Union<P>,
     PC: Get<usize, Value = P> + Push<usize> + Set<usize>,
     PR: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>>
         + Insert<GeomWithData<Rectangle<[K; 2]>, PolygonId>, Value = ()>
@@ -182,7 +182,7 @@ impl<
 
 impl<
     K: Scalar,
-    P: Clone + Rings<K> + Union<P>,
+    P: Clone + Contours<K> + Union<P>,
     PC: Get<usize, Value = P> + Push<usize> + Set<usize>,
     PR: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>>
         + Insert<GeomWithData<Rectangle<[K; 2]>, PolygonId>, Value = ()>

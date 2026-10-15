@@ -6,7 +6,7 @@ use i_overlay::mesh::int::{outline::offset::IntOutlineOffset, style::IntOutlineS
 
 use crate::{
     Polygon, PolygonWithData, Scalar,
-    polygon::{from_i_overlay_ring, to_i_overlay_shape},
+    polygon::{from_i_overlay_contour, to_i_overlay_shape},
 };
 
 pub trait Inflate<K> {
@@ -25,10 +25,10 @@ impl<K: Scalar> Inflate<K> for Polygon<K> {
         };
 
         Polygon {
-            exterior: from_i_overlay_ring(&shape[0]),
+            exterior: from_i_overlay_contour(&shape[0]),
             interiors: shape[1..]
                 .iter()
-                .map(|ring| from_i_overlay_ring(ring))
+                .map(|ring| from_i_overlay_contour(ring))
                 .collect(),
         }
     }

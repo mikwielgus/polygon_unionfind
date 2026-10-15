@@ -38,7 +38,7 @@ pub use inflate::Inflate;
 pub use laminate::Laminate;
 #[cfg(feature = "undoredo")]
 pub use laminate::{LaminateDelta, LaminateHalfDelta, RecordingLaminate};
-pub use polygon::{Polygon, PolygonId, PolygonWithData, Rings};
+pub use polygon::{Contours, Polygon, PolygonId, PolygonWithData};
 pub use polygon_set::PolygonSet;
 #[cfg(feature = "undoredo")]
 pub use polygon_set::{PolygonSetDelta, PolygonSetHalfDelta, RecordingPolygonSet};

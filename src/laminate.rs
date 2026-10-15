@@ -15,7 +15,7 @@ use undoredo::{ApplyDelta, Delta, FlushDelta};
 use crate::Polygon;
 use crate::bool_ops::{Difference, Intersection, Union};
 use crate::{
-    Add, Inflate, Inflated, Negated, Paralleled, PolygonId, PolygonSet, PolygonUnionFind, Rings,
+    Add, Contours, Inflate, Inflated, Negated, Paralleled, PolygonId, PolygonSet, PolygonUnionFind,
     Scalar, Sub, polygon::rectangle_from_polygon,
 };
 #[cfg(feature = "undoredo")]
@@ -41,7 +41,7 @@ pub struct Laminate<K, P = Polygon<K>, L = Lamina<K, P>, T = Interlamina<K, P>> 
 impl<K, P> Laminate<K, P>
 where
     K: Scalar + Default,
-    P: Clone + Rings<K> + Union<P> + Difference<P>,
+    P: Clone + Contours<K> + Union<P> + Difference<P>,
 {
     pub fn new<PI>(
         boundary: P,
@@ -118,7 +118,7 @@ fn lamina_from_boundary<K, P>(
 ) -> Lamina<K, P>
 where
     K: Scalar + Default,
-    P: Clone + Rings<K> + Union<P> + Difference<P>,
+    P: Clone + Contours<K> + Union<P> + Difference<P>,
 {
     let make_negated =
         |offset: K| -> Negated<PolygonSet<K, P>, Inflated<PolygonUnionFind<K, P>, K>> {
@@ -145,7 +145,7 @@ where
 impl<K, P, M, SI, PS> Laminate<K, P, Paralleled<Paralleled<Negated<M, SI>>>, Paralleled<PS>>
 where
     K: Scalar + Ord,
-    P: Clone + Rings<K> + Inflate<K> + Union<P> + Difference<P> + Intersection<P>,
+    P: Clone + Contours<K> + Inflate<K> + Union<P> + Difference<P> + Intersection<P>,
     M: Get<PolygonId, Value = P>,
     PS: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>> + Get<PolygonId, Value = P>,
     Paralleled<Paralleled<Negated<M, SI>>>: Add<
