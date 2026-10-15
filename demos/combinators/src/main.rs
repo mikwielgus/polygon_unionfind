@@ -76,45 +76,45 @@ impl Layers {
     }
 
     fn top_result(&self) -> &RecordingPolygonSet<i32, DemoPolygon> {
-        self.inner.laminas()[0].primary().primary().minuend()
+        self.inner.laminas()[0].main().main().minuend()
     }
 
     fn top_subtrahend(&self) -> &RecordingPolygonUnionFind<i32, DemoPolygon> {
         self.inner.laminas()[0]
-            .primary()
-            .primary()
+            .main()
+            .main()
             .subtrahend()
             .inflatee()
     }
 
     fn parallel_result(&self) -> &RecordingPolygonSet<i32, DemoPolygon> {
-        self.inner.laminas()[0].primary().parallels()[0].minuend()
+        self.inner.laminas()[0].main().sidings()[0].minuend()
     }
 
     fn parallel_subtrahend(&self) -> &RecordingPolygonUnionFind<i32, DemoPolygon> {
-        self.inner.laminas()[0].primary().parallels()[0]
+        self.inner.laminas()[0].main().sidings()[0]
             .subtrahend()
             .inflatee()
     }
 
     fn bottom_result(&self) -> &RecordingPolygonSet<i32, DemoPolygon> {
-        self.inner.laminas()[1].primary().primary().minuend()
+        self.inner.laminas()[1].main().main().minuend()
     }
 
     fn bottom_subtrahend(&self) -> &RecordingPolygonUnionFind<i32, DemoPolygon> {
         self.inner.laminas()[1]
-            .primary()
-            .primary()
+            .main()
+            .main()
             .subtrahend()
             .inflatee()
     }
 
     fn bottom_parallel_result(&self) -> &RecordingPolygonSet<i32, DemoPolygon> {
-        self.inner.laminas()[1].primary().parallels()[0].minuend()
+        self.inner.laminas()[1].main().sidings()[0].minuend()
     }
 
     fn bottom_parallel_subtrahend(&self) -> &RecordingPolygonUnionFind<i32, DemoPolygon> {
-        self.inner.laminas()[1].primary().parallels()[0]
+        self.inner.laminas()[1].main().sidings()[0]
             .subtrahend()
             .inflatee()
     }

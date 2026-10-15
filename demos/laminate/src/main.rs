@@ -337,26 +337,26 @@ async fn main() {
         // Draw order keeps bottom under middle under top.
         for (layer_i, base_color) in [(2usize, SKYBLUE), (1usize, ORANGE), (0usize, RED)] {
             let lamina = &model.laminas()[layer_i];
-            let core = lamina.primary();
+            let core = lamina.main();
 
-            let primary = core.primary().minuend();
-            draw_polygon_set_lines(primary, center, zoom, base_color);
+            let main = core.main().minuend();
+            draw_polygon_set_lines(main, center, zoom, base_color);
 
             let parallel = core
-                .parallels()
+                .sidings()
                 .first()
                 .expect("each core stack has one rail polygon-set")
                 .minuend();
             draw_polygon_set_lines(parallel, center, zoom, darken(base_color, 0.55));
 
             let periph = lamina
-                .parallels()
+                .sidings()
                 .first()
                 .expect("each lamina has one peripheral stack");
-            let periph_primary = periph.primary().minuend();
-            draw_polygon_set_lines(periph_primary, center, zoom, darken(base_color, 0.72));
+            let periph_main = periph.main().minuend();
+            draw_polygon_set_lines(periph_main, center, zoom, darken(base_color, 0.72));
             let periph_rail = periph
-                .parallels()
+                .sidings()
                 .first()
                 .expect("each peripheral has one rail polygon-set")
                 .minuend();
@@ -364,10 +364,10 @@ async fn main() {
         }
 
         // Interlamina between top and middle is visually topmost.
-        let topmost_interlamina = model.interlaminas()[0].primary();
+        let topmost_interlamina = model.interlaminas()[0].main();
         draw_polygon_set_lines(topmost_interlamina, center, zoom, YELLOW);
 
-        let other_interlamina = model.interlaminas()[1].primary();
+        let other_interlamina = model.interlaminas()[1].main();
         draw_polygon_set_lines(other_interlamina, center, zoom, MAGENTA);
 
         next_frame().await;

@@ -130,35 +130,38 @@ impl<
 
 #[derive(Clone, Debug)]
 pub struct Paralleled<S> {
-    primary: S,
-    parallels: Vec<S>,
+    main: S,
+    sidings: Vec<S>,
 }
 
 impl<S> Paralleled<S> {
     #[inline]
-    pub fn primary(&self) -> &S {
-        &self.primary
+    pub fn main(&self) -> &S {
+        &self.main
     }
 
     #[inline]
-    pub fn parallels(&self) -> &Vec<S> {
-        &self.parallels
+    pub fn sidings(&self) -> &Vec<S> {
+        &self.sidings
     }
 
     #[inline]
     pub fn row(&self, row: usize) -> &S {
         if row >= 1 {
-            &self.parallels[row - 1]
+            &self.sidings[row - 1]
         } else {
-            &self.primary
+            &self.main
         }
     }
 }
 
 impl<S> Paralleled<S> {
     #[inline]
-    pub fn new(primary: S, parallels: Vec<S>) -> Self {
-        Self { primary, parallels }
+    pub fn new(main: S, sidings: Vec<S>) -> Self {
+        Self {
+            main: main,
+            sidings: sidings,
+        }
     }
 }
 
@@ -166,13 +169,14 @@ impl<P: Clone, S: Add<P>> Add<P> for Paralleled<S> {
     type Output = (S::Output, Vec<S::Output>);
 
     fn add(&mut self, polygon: P) -> (S::Output, Vec<S::Output>) {
-        let parallel_outputs = self
-            .parallels
+        let siding_outputs = self
+            .sidings
             .iter_mut()
-            .map(|parallel| parallel.add(polygon.clone()))
+            .map(|siding| siding.add(polygon.clone()))
             .collect();
-        let primary_output = self.primary.add(polygon);
-        (primary_output, parallel_outputs)
+        let main_output = self.main.add(polygon);
+
+        (main_output, siding_outputs)
     }
 }
 
@@ -180,13 +184,14 @@ impl<P: Clone, S: Sub<P>> Sub<P> for Paralleled<S> {
     type Output = (S::Output, Vec<S::Output>);
 
     fn sub(&mut self, polygon: P) -> (S::Output, Vec<S::Output>) {
-        let parallel_outputs = self
-            .parallels
+        let siding_outputs = self
+            .sidings
             .iter_mut()
-            .map(|parallel| parallel.sub(polygon.clone()))
+            .map(|siding| siding.sub(polygon.clone()))
             .collect();
-        let primary_output = self.primary.sub(polygon);
-        (primary_output, parallel_outputs)
+        let main_output = self.main.sub(polygon);
+
+        (main_output, siding_outputs)
     }
 }
 
@@ -194,11 +199,11 @@ impl<P: Clone, S: Clip<P>> Clip<P> for Paralleled<S> {
     type Output = S::Output;
 
     fn clip(&mut self, polygon: P) -> S::Output {
-        for parallel in &mut self.parallels {
-            parallel.clip(polygon.clone());
+        for siding in &mut self.sidings {
+            siding.clip(polygon.clone());
         }
 
-        self.primary.clip(polygon)
+        self.main.clip(polygon)
     }
 }
 
@@ -311,18 +316,18 @@ impl<SE: Clone, S: Clone + ApplyDelta<SE>> ApplyDelta<ParalleledHalfDelta<SE>> f
     fn apply_delta(&mut self, delta: ParalleledDelta<SE>) {
         let (removed, inserted) = delta.dissolve();
 
-        let primary_delta = Delta::with_removed_inserted(removed.primary, inserted.primary);
-        self.primary.apply_delta(primary_delta);
+        let main_delta = Delta::with_removed_inserted(removed.main, inserted.main);
+        self.main.apply_delta(main_delta);
 
-        for (parallel, (removed_parallel, inserted_parallel)) in self.parallels.iter_mut().zip(
+        for (siding, (removed_siding, inserted_siding)) in self.sidings.iter_mut().zip(
             removed
-                .parallels
+                .sidings
                 .into_iter()
-                .zip(inserted.parallels.into_iter()),
+                .zip(inserted.sidings.into_iter()),
         ) {
-            parallel.apply_delta(Delta::with_removed_inserted(
-                removed_parallel,
-                inserted_parallel,
+            siding.apply_delta(Delta::with_removed_inserted(
+                removed_siding,
+                inserted_siding,
             ));
         }
     }
@@ -331,21 +336,21 @@ impl<SE: Clone, S: Clone + ApplyDelta<SE>> ApplyDelta<ParalleledHalfDelta<SE>> f
 #[cfg(feature = "undoredo")]
 impl<SE: Clone, S: FlushDelta<SE>> FlushDelta<ParalleledHalfDelta<SE>> for Paralleled<S> {
     fn flush_delta(&mut self) -> ParalleledDelta<SE> {
-        let (removed_primary, inserted_primary) = self.primary.flush_delta().dissolve();
-        let (removed_parallels, inserted_parallels) = self
-            .parallels
+        let (removed_main, inserted_main) = self.main.flush_delta().dissolve();
+        let (removed_sidings, inserted_sidings) = self
+            .sidings
             .iter_mut()
-            .map(|parallel| parallel.flush_delta().dissolve())
+            .map(|siding| siding.flush_delta().dissolve())
             .unzip();
 
         Delta::with_removed_inserted(
             Paralleled {
-                primary: removed_primary,
-                parallels: removed_parallels,
+                main: removed_main,
+                sidings: removed_sidings,
             },
             Paralleled {
-                primary: inserted_primary,
-                parallels: inserted_parallels,
+                main: inserted_main,
+                sidings: inserted_sidings,
             },
         )
     }

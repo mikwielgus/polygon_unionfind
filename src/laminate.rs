@@ -63,10 +63,10 @@ where
                 num_laminas
             ];
         let interlamina = {
-            let mut primary_set = PolygonSet::new();
-            let _ = primary_set.add(boundary.clone());
+            let mut main_set = PolygonSet::new();
+            let _ = main_set.add(boundary.clone());
             Paralleled::new(
-                primary_set,
+                main_set,
                 core::iter::repeat_n(PolygonSet::new(), count_peripheral_inflations).collect(),
             )
         };
@@ -137,9 +137,9 @@ where
             Paralleled::new(track, rails)
         };
 
-    let core = make_paralleled(K::default());
-    let peripherals = peripheral_inflations.map(make_paralleled).collect();
-    Paralleled::new(core, peripherals)
+    let main = make_paralleled(K::default());
+    let sides = peripheral_inflations.map(make_paralleled).collect();
+    Paralleled::new(main, sides)
 }
 
 impl<K, P, M, SI, PS> Laminate<K, P, Paralleled<Paralleled<Negated<M, SI>>>, Paralleled<PS>>
@@ -158,38 +158,37 @@ where
     Paralleled<PS>: Sub<P> + Add<P>,
 {
     pub fn add_into_lamina(&mut self, lamina_index: usize, polygon: P) {
+        // XXX: Isn't this overly defensive?
         if lamina_index >= self.laminas.len() {
             return;
         }
 
         let (clipping_polygons, removed_polygons) = {
             let lamina = self.laminas.get_mut(lamina_index).unwrap();
-            let (inner_outputs, _outer_parallel_outputs) = lamina.add(polygon);
-            let (inner_primary_output, inner_parallel_outputs) = inner_outputs;
-            let (parallel_ids, removed_polygons) = inner_parallel_outputs
-                .first()
-                .cloned()
-                .unwrap_or(inner_primary_output);
+            let (mainroad_outputs, _sideroad_outputs) = lamina.add(polygon);
+            let (mainlane_output, sidelane_outputs) = mainroad_outputs;
+            let (siding_ids, removed_polygons) =
+                sidelane_outputs.first().cloned().unwrap_or(mainlane_output);
 
-            // We hard-code the last parallel to be the polygon-set that clips
+            // We hard-code the last siding to be the polygon-set that clips
             // the interlamina.
-            let Some(clipping_source) = lamina.primary().parallels().last().map(|s| s.minuend())
-            else {
+            let Some(clipping_source) = lamina.main().sidings().last().map(|s| s.minuend()) else {
                 return;
             };
 
             (
-                Self::polygons_under_ids(&parallel_ids, clipping_source),
+                Self::polygons_under_ids(&siding_ids, clipping_source),
                 removed_polygons,
             )
         };
 
-        // Interlamina i corresponds to the window (i, i+1). Hence, a write to
+        // Interlamina i is adjacent to laminas i and i+1. Hence, a write to
         // lamina k affects interlaminas k-1 and k.
         if lamina_index > 0 {
             self.exclude_removed(lamina_index - 1, &removed_polygons);
             self.clip_interpolygon(lamina_index - 1, clipping_polygons.clone());
         }
+
         if lamina_index < self.interlaminas.len() {
             self.exclude_removed(lamina_index, &removed_polygons);
             self.clip_interpolygon(lamina_index, clipping_polygons);
@@ -228,7 +227,7 @@ where
             let clip_bbox = rectangle_from_polygon(clipping_polygon);
 
             for hit in interlamina
-                .primary()
+                .main()
                 .as_ref()
                 .locate_in_envelope_intersecting(clip_bbox.envelope())
             {
@@ -238,7 +237,7 @@ where
 
         let located_interpolygons: Vec<P> = located_interids
             .into_iter()
-            .filter_map(|id| Get::get(interlamina.primary(), &id).cloned())
+            .filter_map(|id| Get::get(interlamina.main(), &id).cloned())
             .collect();
 
         for interpolygon in located_interpolygons {
@@ -260,7 +259,7 @@ where
 
             let _ = interlamina.sub(interpolygon);
 
-            for (_idx, piece) in clipped_union.polygons().iter() {
+            for (_index, piece) in clipped_union.polygons().iter() {
                 let _ = interlamina.add(piece.clone());
             }
         }
