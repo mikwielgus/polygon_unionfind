@@ -23,15 +23,12 @@ mod unionfind;
 
 use numlike::{
     alg::PofieldBundle,
-    convert::{DequantizeFrom, QuantizeInto},
+    convert::{CastFrom, CastInto},
     limits::ExtendedBounds,
 };
 
-pub trait Scalar: ExtendedBounds + PofieldBundle + DequantizeFrom<i32> + QuantizeInto<i32> {}
-impl<T> Scalar for T where
-    T: ExtendedBounds + PofieldBundle + DequantizeFrom<i32> + QuantizeInto<i32>
-{
-}
+pub trait Scalar: ExtendedBounds + PofieldBundle + CastFrom<i32> + CastInto<i32> {}
+impl<T> Scalar for T where T: ExtendedBounds + PofieldBundle + CastFrom<i32> + CastInto<i32> {}
 
 pub use bool_ops::{Difference, Intersection, Union};
 pub use combinators::{Inflated, Negated, Paralleled};

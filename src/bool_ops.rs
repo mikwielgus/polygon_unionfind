@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use alloc::vec::Vec;
-use core::{convert::TryFrom, slice};
+use core::convert::TryFrom;
 
 use i_overlay::{
     core::{fill_rule::FillRule, overlay::Overlay, overlay_rule::OverlayRule},
@@ -26,7 +26,7 @@ pub trait Difference<T> {
 }
 
 /// Output contour order on success: `[exterior, interiors..]`.
-fn rings_to_int_shape<K, X: Rings<K>>(polygon: &X) -> Option<IntShape>
+fn rings_to_int_shape<K, X: Rings<K>>(polygon: &X) -> Option<IntShape<i32>>
 where
     K: Copy,
     i32: TryFrom<K>,
@@ -75,7 +75,7 @@ where
     let subj_shape = rings_to_int_shape::<K, _>(a)?;
     let clip_shape = rings_to_int_shape::<K, _>(b)?;
 
-    let union = Overlay::with_shapes(slice::from_ref(&subj_shape), slice::from_ref(&clip_shape))
+    let union = Overlay::from_subj_and_clip(&subj_shape, &clip_shape)
         .overlay(overlay_rule, FillRule::EvenOdd);
 
     if union.len() >= 2 {
@@ -108,7 +108,7 @@ where
     let subj_shape = rings_to_int_shape::<K, _>(a)?;
     let clip_shape = rings_to_int_shape::<K, _>(b)?;
 
-    Overlay::with_shapes(slice::from_ref(&subj_shape), slice::from_ref(&clip_shape))
+    Overlay::from_subj_and_clip(&subj_shape, &clip_shape)
         .overlay(overlay_rule, FillRule::EvenOdd)
         .into_iter()
         .map(|shape| {

@@ -4,6 +4,8 @@
 
 use alloc::vec::Vec;
 use core::{iter::Map, slice::Iter};
+use i_overlay::i_float::int::point::IntPoint;
+use numlike::convert::{CastFrom, CastInto};
 use rstared::{AABB, Envelope, primitives::Rectangle};
 
 use crate::Scalar;
@@ -16,6 +18,13 @@ pub trait Rings<K> {
 
     fn exterior(&self) -> &[[K; 2]];
     fn interiors<'a>(&'a self) -> Self::RingIter<'a>;
+
+    fn rings<'a>(&'a self) -> impl Iterator<Item = &'a [[K; 2]]> + 'a
+    where
+        K: 'a,
+    {
+        core::iter::once(self.exterior()).chain(self.interiors())
+    }
 }
 
 pub(crate) fn rectangle_from_polygon<K: Scalar, P: Rings<K>>(polygon: &P) -> Rectangle<[K; 2]> {
@@ -27,6 +36,24 @@ pub(crate) fn rectangle_from_polygon<K: Scalar, P: Rings<K>>(polygon: &P) -> Rec
                 aabb.merged(&AABB::from_point([vertex[0].clone(), vertex[1].clone()]))
             }),
     )
+}
+
+pub(crate) fn from_i_overlay_ring<K: CastFrom<i32>>(ring: &[IntPoint]) -> Vec<[K; 2]> {
+    ring.iter()
+        .map(|vertex| [K::cast_from(vertex.x), K::cast_from(vertex.y)])
+        .collect()
+}
+
+pub(crate) fn to_i_overlay_ring<K: Clone + CastInto<i32>>(ring: &[[K; 2]]) -> Vec<IntPoint> {
+    ring.iter()
+        .map(|vertex| IntPoint::new(vertex[0].clone().cast_into(), vertex[1].clone().cast_into()))
+        .collect()
+}
+
+pub(crate) fn to_i_overlay_shape<K: Clone + CastInto<i32>, P: Rings<K>>(
+    polygon: &P,
+) -> Vec<Vec<IntPoint>> {
+    polygon.rings().map(to_i_overlay_ring).collect()
 }
 
 /// An index pointing to a polygon.
