@@ -155,12 +155,16 @@ where
                 Vec<((Vec<PolygonId>, Vec<P>), Vec<(Vec<PolygonId>, Vec<P>)>)>,
             ),
         >,
-    Paralleled<PS>: Sub<P> + Add<P>,
+    Paralleled<PS>: Sub<P> + Add<P, Output = (PolygonId, Vec<PolygonId>)>,
 {
-    pub fn add_into_lamina(&mut self, lamina_index: usize, polygon: P) {
+    pub fn add_into_lamina(
+        &mut self,
+        lamina_index: usize,
+        polygon: P,
+    ) -> (Vec<PolygonId>, Vec<PolygonId>) {
         // XXX: Isn't this overly defensive?
         if lamina_index >= self.laminas.len() {
-            return;
+            return (vec![], vec![]);
         }
 
         let (clipping_polygons, removed_polygons) = {
@@ -173,7 +177,7 @@ where
             // We hard-code the last siding to be the polygon-set that clips
             // the interlamina.
             let Some(clipping_source) = lamina.main().sidings().last().map(|s| s.minuend()) else {
-                return;
+                return (vec![], vec![]);
             };
 
             (
@@ -182,17 +186,27 @@ where
             )
         };
 
-        // Interlamina i is adjacent to laminas i and i+1. Hence, a write to
-        // lamina k affects interlaminas k-1 and k.
-        if lamina_index > 0 {
-            self.exclude_removed(lamina_index - 1, &removed_polygons);
-            self.clip_interpolygon(lamina_index - 1, clipping_polygons.clone());
-        }
+        // Interlamina `i` is adjacent to laminas `i` and `i+1`. Hence, a write to
+        // lamina `k` affects interlaminas `k-1` and `k`.
 
-        if lamina_index < self.interlaminas.len() {
+        let clipped_above = if lamina_index > 0 {
+            self.exclude_removed(lamina_index - 1, &removed_polygons);
+
+            // PERF?: Likely elidable clone.
+            self.locate_and_clip_interpolygons(lamina_index - 1, clipping_polygons.clone())
+        } else {
+            vec![]
+        };
+
+        let clipped_below = if lamina_index < self.interlaminas.len() {
             self.exclude_removed(lamina_index, &removed_polygons);
-            self.clip_interpolygon(lamina_index, clipping_polygons);
-        }
+
+            self.locate_and_clip_interpolygons(lamina_index, clipping_polygons)
+        } else {
+            vec![]
+        };
+
+        (clipped_above, clipped_below)
     }
 
     fn polygons_under_ids(ids: &[PolygonId], source: &M) -> Vec<P> {
@@ -213,12 +227,16 @@ where
         }
     }
 
-    fn clip_interpolygon(&mut self, interpolygon_index: usize, clipping_polygons: Vec<P>) {
-        let interlamina = &mut self.interlaminas[interpolygon_index];
+    fn locate_and_clip_interpolygons(
+        &mut self,
+        interlamina_index: usize,
+        clipping_polygons: Vec<P>,
+    ) -> Vec<PolygonId> {
+        let interlamina = &mut self.interlaminas[interlamina_index];
 
         if clipping_polygons.is_empty() {
             // If there is nothing to clip, the interlamina is unaffected.
-            return;
+            return vec![];
         }
 
         let mut located_interids = BTreeSet::new();
@@ -235,12 +253,14 @@ where
             }
         }
 
-        let located_interpolygons: Vec<P> = located_interids
+        let located_interpolygons: Vec<(PolygonId, P)> = located_interids
             .into_iter()
-            .filter_map(|id| Get::get(interlamina.main(), &id).cloned())
+            .filter_map(|id| Some((id, Get::get(interlamina.main(), &id).cloned()?)))
             .collect();
 
-        for interpolygon in located_interpolygons {
+        let mut clipped_interids = BTreeSet::new();
+
+        for (_, interpolygon) in located_interpolygons.into_iter() {
             let mut clipped_union = PolygonSet::<K, P>::new();
             let mut has_intersection = false;
 
@@ -260,9 +280,15 @@ where
             let _ = interlamina.sub(interpolygon);
 
             for (_index, piece) in clipped_union.polygons().iter() {
-                let _ = interlamina.add(piece.clone());
+                // We collect all the added pieces, deduplicated, so that we can
+                // detect when a polygon is split into multiple.
+                let (added_id, _) = interlamina.add(piece.clone());
+
+                clipped_interids.insert(added_id);
             }
         }
+
+        clipped_interids.into_iter().collect()
     }
 }
 
