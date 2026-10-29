@@ -146,7 +146,7 @@ impl<K, P, M, SI, PS> Laminate<K, P, Paralleled<Paralleled<Negated<M, SI>>>, Par
 where
     K: Scalar + Ord,
     P: Clone + Contours<K> + Inflate<K> + Union<P> + Difference<P> + Intersection<P>,
-    M: Get<PolygonId, Value = P>,
+    M: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>> + Get<PolygonId, Value = P>,
     PS: AsRef<RTree<GeomWithData<Rectangle<[K; 2]>, PolygonId>>> + Get<PolygonId, Value = P>,
     Paralleled<Paralleled<Negated<M, SI>>>: Add<
             P,
@@ -162,11 +162,6 @@ where
         lamina_index: usize,
         polygon: P,
     ) -> (Vec<PolygonId>, Vec<PolygonId>) {
-        // XXX: Isn't this overly defensive?
-        if lamina_index >= self.laminas.len() {
-            return (vec![], vec![]);
-        }
-
         let (clipping_polygons, removed_polygons) = {
             let lamina = self.laminas.get_mut(lamina_index).unwrap();
             let (mainroad_outputs, _sideroad_outputs) = lamina.add(polygon);
@@ -290,15 +285,79 @@ where
 
         clipped_interids.into_iter().collect()
     }
+
+    pub fn polygons_above(
+        &self,
+        interlamina_index: usize,
+        interpolygon_id: PolygonId,
+    ) -> Vec<PolygonId> {
+        self.locate_polygons_intersecting_interpolygon(
+            interlamina_index,
+            interlamina_index,
+            interpolygon_id,
+        )
+    }
+
+    pub fn polygons_below(
+        &self,
+        interlamina_index: usize,
+        interpolygon_id: PolygonId,
+    ) -> Vec<PolygonId> {
+        self.locate_polygons_intersecting_interpolygon(
+            interlamina_index,
+            interlamina_index + 1,
+            interpolygon_id,
+        )
+    }
+
+    fn locate_polygons_intersecting_interpolygon(
+        &self,
+        interlamina_index: usize,
+        lamina_index: usize,
+        interpolygon_id: PolygonId,
+    ) -> Vec<PolygonId> {
+        let interpolygon = Get::get(
+            self.interlaminas[interlamina_index].main(),
+            &interpolygon_id,
+        )
+        .unwrap();
+
+        let source = self.laminas[lamina_index]
+            .main()
+            .sidings()
+            .last()
+            .unwrap()
+            .minuend();
+
+        let mut located_ids = BTreeSet::new();
+
+        for hit in source
+            .as_ref()
+            .locate_in_envelope_intersecting(rectangle_from_polygon(interpolygon).envelope())
+        {
+            if P::intersection(
+                interpolygon.clone(),
+                Get::get(source, &hit.data).unwrap().clone(),
+            )
+            .is_empty()
+            {
+                continue;
+            }
+
+            located_ids.insert(hit.data);
+        }
+
+        located_ids.into_iter().collect()
+    }
 }
 
 #[cfg(feature = "undoredo")]
-/// `Laminate`-equivalent using recording container combinators.
+/// `Laminate` using recording container combinators.
 pub type RecordingLaminate<K, P = Polygon<K>> =
     Laminate<K, P, RecordingLamina<K, P>, RecordingInterlamina<K, P>>;
 
 #[cfg(feature = "undoredo")]
-/// Half-delta of `Laminate`.
+/// Half-delta of `Laminate` for delta-based Undo/Redo.
 pub type LaminateHalfDelta<K, P, LE, TE> = Laminate<K, P, LE, TE>;
 
 #[cfg(feature = "undoredo")]
