@@ -2,11 +2,14 @@
 //
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+use std::collections::BTreeSet;
+
 use macroquad::prelude::*;
 use macroquad::rand::gen_range;
 use polygon_unionfind::{
-    Inflated, LaminateDelta, Negated, Paralleled, PolygonSetHalfDelta, PolygonUnionFindHalfDelta,
-    PolygonWithData, RecordingInflated, RecordingLaminate, RecordingNegated, RecordingPolygonSet,
+    Inflated, LaminateDelta, Negated, Paralleled, PolygonId, PolygonSetHalfDelta,
+    PolygonUnionFindHalfDelta, PolygonWithData, RecordingInflated, RecordingLaminate,
+    RecordingNegated, RecordingPolygonSet,
 };
 use undoredo::UndoRedo;
 
@@ -155,16 +158,62 @@ fn random_polygon_at_screen_click(center: Vec2, zoom: f32, mx: f32, my: f32) -> 
     polygon_from_ring_i32(ring)
 }
 
+fn exterior_centroid(exterior: &[[i32; 2]]) -> Option<[f32; 2]> {
+    if exterior.is_empty() {
+        return None;
+    }
+
+    let mut sum_x = 0.0f32;
+    let mut sum_y = 0.0f32;
+
+    for vertex in exterior {
+        sum_x += vertex[0] as f32;
+        sum_y += vertex[1] as f32;
+    }
+
+    let count = exterior.len() as f32;
+
+    Some([sum_x / count, sum_y / count])
+}
+
+fn id_label_rect(label: &str, screen: Vec2, font_size: f32) -> Rect {
+    let dims = measure_text(label, None, font_size as u16, 1.0);
+
+    Rect::new(
+        screen.x - dims.width * 0.5,
+        screen.y + dims.offset_y * 0.5 - dims.height,
+        dims.width.max(12.0),
+        dims.height.max(12.0),
+    )
+}
+
+fn draw_id_label(label: &str, screen: Vec2, color: Color, is_highlighted: bool) {
+    let font_size = if is_highlighted { 28.0 } else { 18.0 };
+    let color = if is_highlighted { WHITE } else { color };
+    let dims = measure_text(label, None, font_size as u16, 1.0);
+    let x = screen.x - dims.width * 0.5;
+    let y = screen.y + dims.offset_y * 0.5;
+
+    if is_highlighted {
+        draw_text(label, x + 1.0, y, font_size, WHITE);
+        draw_text(label, x, y + 1.0, font_size, WHITE);
+    }
+
+    draw_text(label, x, y, font_size, color);
+}
+
 fn draw_polygon_set_lines(
     polygon_set: &RecordingPolygonSet<i32, DemoPolygon>,
     center: Vec2,
     zoom: f32,
     color: Color,
+    highlighted_ids: &BTreeSet<usize>,
 ) {
-    for (_index, polygon) in polygon_set.polygons().as_ref().iter() {
+    for (index, polygon) in polygon_set.polygons().as_ref().iter() {
         let rings: Vec<&[[i32; 2]]> = std::iter::once(polygon.exterior.as_slice())
             .chain(polygon.interiors.iter().map(Vec::as_slice))
             .collect();
+
         for ring in rings.iter().copied() {
             for (from, to) in ring
                 .iter()
@@ -176,7 +225,51 @@ fn draw_polygon_set_lines(
                 draw_line(start.x, start.y, end.x, end.y, 2.5, color);
             }
         }
+
+        if let Some([world_x, world_y]) = exterior_centroid(&polygon.exterior) {
+            let label = format!("{index}");
+            let screen = center + vec2(world_x, -world_y) * zoom;
+
+            draw_id_label(&label, screen, color, highlighted_ids.contains(&index));
+        }
     }
+}
+
+fn pick_interpolygon_id(
+    model: &DemoLaminate,
+    interlamina_visible: &[bool],
+    center: Vec2,
+    zoom: f32,
+    mouse: Vec2,
+) -> Option<(usize, PolygonId)> {
+    for interlamina_index in (0..model.interlaminas().len()).rev() {
+        if !interlamina_visible[interlamina_index] {
+            continue;
+        }
+
+        for (index, polygon) in model.interlaminas()[interlamina_index]
+            .main()
+            .polygons()
+            .as_ref()
+            .iter()
+        {
+            let Some([world_x, world_y]) = exterior_centroid(&polygon.exterior) else {
+                continue;
+            };
+
+            let label = format!("{index}");
+            let screen = center + vec2(world_x, -world_y) * zoom;
+            let hit = id_label_rect(&label, screen, 18.0);
+
+            let padded = Rect::new(hit.x - 6.0, hit.y - 6.0, hit.w + 12.0, hit.h + 12.0);
+
+            if padded.contains(mouse) {
+                return Some((interlamina_index, PolygonId::new(index)));
+            }
+        }
+    }
+
+    None
 }
 
 fn darken(color: Color, factor: f32) -> Color {
@@ -186,6 +279,76 @@ fn darken(color: Color, factor: f32) -> Color {
         color.b * factor,
         color.a,
     )
+}
+
+const VISIBILITY_ROW_H: f32 = 28.0;
+const VISIBILITY_ROW_GAP: f32 = 4.0;
+const VISIBILITY_PANEL_X: f32 = 20.0;
+const VISIBILITY_PANEL_W: f32 = 210.0;
+
+fn lamina_visibility_row_top(index: usize) -> f32 {
+    72.0 + index as f32 * (VISIBILITY_ROW_H + VISIBILITY_ROW_GAP)
+}
+
+fn interlamina_visibility_row_top(num_laminas: usize, index: usize) -> f32 {
+    lamina_visibility_row_top(num_laminas)
+        + 28.0
+        + index as f32 * (VISIBILITY_ROW_H + VISIBILITY_ROW_GAP)
+}
+
+fn visibility_row_rect(y: f32) -> Rect {
+    Rect::new(VISIBILITY_PANEL_X, y, VISIBILITY_PANEL_W, VISIBILITY_ROW_H)
+}
+
+fn visibility_checkbox_square(y: f32) -> Rect {
+    Rect::new(VISIBILITY_PANEL_X + 8.0, y + 6.0, 16.0, 16.0)
+}
+
+fn visibility_panel_bottom(num_laminas: usize, num_interlaminas: usize) -> f32 {
+    if num_interlaminas == 0 {
+        lamina_visibility_row_top(num_laminas.saturating_sub(1)) + VISIBILITY_ROW_H
+    } else {
+        interlamina_visibility_row_top(num_laminas, num_interlaminas - 1) + VISIBILITY_ROW_H
+    }
+}
+
+fn ui_blocks_click(
+    mouse: Vec2,
+    undo_button: Rect,
+    redo_button: Rect,
+    num_laminas: usize,
+    num_interlaminas: usize,
+) -> bool {
+    if undo_button.contains(mouse) || redo_button.contains(mouse) {
+        return true;
+    }
+
+    mouse.x >= VISIBILITY_PANEL_X
+        && mouse.x <= VISIBILITY_PANEL_X + VISIBILITY_PANEL_W
+        && mouse.y >= lamina_visibility_row_top(0)
+        && mouse.y <= visibility_panel_bottom(num_laminas, num_interlaminas)
+}
+
+fn draw_visibility_checkbox(y: f32, is_on: bool, accent: Color, label: &str) {
+    let row = visibility_row_rect(y);
+    let bg = if is_on {
+        Color::new(accent.r * 0.28, accent.g * 0.28, accent.b * 0.28, 0.92)
+    } else {
+        Color::new(0.12, 0.12, 0.12, 0.92)
+    };
+
+    draw_rectangle(row.x, row.y, row.w, row.h, bg);
+    draw_rectangle_lines(row.x, row.y, row.w, row.h, 1.5, LIGHTGRAY);
+
+    let sq = visibility_checkbox_square(y);
+
+    draw_rectangle_lines(sq.x, sq.y, sq.w, sq.h, 2.0, LIGHTGRAY);
+
+    if is_on {
+        draw_rectangle(sq.x + 3.5, sq.y + 3.5, sq.w - 7.0, sq.h - 7.0, accent);
+    }
+
+    draw_text(label, row.x + 32.0, row.y + 19.0, 18.0, WHITE);
 }
 
 #[macroquad::main("lamina with interlamina")]
@@ -198,6 +361,18 @@ async fn main() {
     let mut last_middle_mouse: Option<Vec2> = None;
     let mut middle_press_start: Option<Vec2> = None;
     let mut middle_panned = false;
+
+    let num_laminas = model.laminas().len();
+    let num_interlaminas = model.interlaminas().len();
+    let mut lamina_visible = vec![true; num_laminas];
+    let mut interlamina_visible = vec![true; num_interlaminas];
+    let mut selected_interpolygon: Option<(usize, PolygonId)> = None;
+
+    let lamina_labels = ["TOP (L0)", "MIDDLE (L1)", "BOTTOM (L2)"];
+    let lamina_accents = [RED, ORANGE, SKYBLUE];
+    let interlamina_labels = ["inter 0 (L0-L1)", "inter 1 (L1-L2)"];
+    let interlamina_accents = [YELLOW, MAGENTA];
+    let empty_highlights = BTreeSet::new();
 
     loop {
         let undo_button = Rect::new(20.0, 20.0, 100.0, 36.0);
@@ -219,12 +394,62 @@ async fn main() {
 
         if undo_clicked {
             undoredo.undo(&mut model);
+            selected_interpolygon = None;
         } else if redo_clicked {
             undoredo.redo(&mut model);
+            selected_interpolygon = None;
         } else if left_pressed {
-            model.add_into_lamina(0, random_polygon_at_screen_click(center, zoom, mx, my));
-            undoredo.commit(&mut model);
-        } else if right_pressed {
+            let mut is_toggled = false;
+
+            for (index, is_visible) in lamina_visible.iter_mut().enumerate() {
+                if visibility_row_rect(lamina_visibility_row_top(index)).contains(mouse) {
+                    *is_visible = !*is_visible;
+                    is_toggled = true;
+                    break;
+                }
+            }
+
+            if !is_toggled {
+                for (index, is_visible) in interlamina_visible.iter_mut().enumerate() {
+                    if visibility_row_rect(interlamina_visibility_row_top(num_laminas, index))
+                        .contains(mouse)
+                    {
+                        *is_visible = !*is_visible;
+                        is_toggled = true;
+                        break;
+                    }
+                }
+            }
+
+            if !is_toggled
+                && !ui_blocks_click(
+                    mouse,
+                    undo_button,
+                    redo_button,
+                    num_laminas,
+                    num_interlaminas,
+                )
+            {
+                if let Some(picked) =
+                    pick_interpolygon_id(&model, &interlamina_visible, center, zoom, mouse)
+                {
+                    selected_interpolygon = Some(picked);
+                } else {
+                    selected_interpolygon = None;
+                    model.add_into_lamina(0, random_polygon_at_screen_click(center, zoom, mx, my));
+                    undoredo.commit(&mut model);
+                }
+            }
+        } else if right_pressed
+            && !ui_blocks_click(
+                mouse,
+                undo_button,
+                redo_button,
+                num_laminas,
+                num_interlaminas,
+            )
+        {
+            selected_interpolygon = None;
             model.add_into_lamina(2, random_polygon_at_screen_click(center, zoom, mx, my));
             undoredo.commit(&mut model);
         }
@@ -249,11 +474,20 @@ async fn main() {
         if is_mouse_button_released(MouseButton::Middle) {
             if !middle_panned {
                 if let Some(click_pos) = middle_press_start {
-                    model.add_into_lamina(
-                        1,
-                        random_polygon_at_screen_click(center, zoom, click_pos.x, click_pos.y),
-                    );
-                    undoredo.commit(&mut model);
+                    if !ui_blocks_click(
+                        click_pos,
+                        undo_button,
+                        redo_button,
+                        num_laminas,
+                        num_interlaminas,
+                    ) {
+                        selected_interpolygon = None;
+                        model.add_into_lamina(
+                            1,
+                            random_polygon_at_screen_click(center, zoom, click_pos.x, click_pos.y),
+                        );
+                        undoredo.commit(&mut model);
+                    }
                 }
             }
             middle_press_start = None;
@@ -322,7 +556,8 @@ async fn main() {
         );
 
         if show_hint {
-            let hint = "Left: TOP, middle: MIDDLE, right: BOTTOM. Scroll to zoom.";
+            let hint =
+                "Left: TOP / click interpolygon id to highlight. Middle: MIDDLE, right: BOTTOM.";
             let hint_size = 22.0;
             let hint_dims = measure_text(hint, None, hint_size as u16, 1.0);
             draw_text(
@@ -334,41 +569,150 @@ async fn main() {
             );
         }
 
-        // Draw order keeps bottom under middle under top.
+        if let Some((interlamina_index, interpolygon_id)) = selected_interpolygon {
+            if model.interlaminas()[interlamina_index]
+                .main()
+                .polygons()
+                .as_ref()
+                .get(interpolygon_id.index())
+                .is_none()
+            {
+                selected_interpolygon = None;
+            }
+        }
+
+        let (highlight_interlamina, highlight_above, highlight_below) =
+            if let Some((interlamina_index, interpolygon_id)) = selected_interpolygon {
+                let above = model
+                    .polygons_above(interlamina_index, interpolygon_id)
+                    .into_iter()
+                    .map(PolygonId::index)
+                    .collect::<BTreeSet<_>>();
+                let below = model
+                    .polygons_below(interlamina_index, interpolygon_id)
+                    .into_iter()
+                    .map(PolygonId::index)
+                    .collect::<BTreeSet<_>>();
+
+                (
+                    Some((interlamina_index, interpolygon_id.index())),
+                    (interlamina_index, above),
+                    (interlamina_index + 1, below),
+                )
+            } else {
+                (
+                    None,
+                    (usize::MAX, BTreeSet::new()),
+                    (usize::MAX, BTreeSet::new()),
+                )
+            };
+
         for (layer_i, base_color) in [(2usize, SKYBLUE), (1usize, ORANGE), (0usize, RED)] {
+            if !lamina_visible[layer_i] {
+                continue;
+            }
+
             let lamina = &model.laminas()[layer_i];
             let core = lamina.main();
 
             let main = core.main().minuend();
-            draw_polygon_set_lines(main, center, zoom, base_color);
+            draw_polygon_set_lines(main, center, zoom, base_color, &empty_highlights);
 
             let parallel = core
                 .sidings()
                 .first()
                 .expect("each core stack has one rail polygon-set")
                 .minuend();
-            draw_polygon_set_lines(parallel, center, zoom, darken(base_color, 0.55));
+            let rail_highlights = if layer_i == highlight_above.0 {
+                &highlight_above.1
+            } else if layer_i == highlight_below.0 {
+                &highlight_below.1
+            } else {
+                &empty_highlights
+            };
+            draw_polygon_set_lines(
+                parallel,
+                center,
+                zoom,
+                darken(base_color, 0.55),
+                rail_highlights,
+            );
 
             let periph = lamina
                 .sidings()
                 .first()
                 .expect("each lamina has one peripheral stack");
             let periph_main = periph.main().minuend();
-            draw_polygon_set_lines(periph_main, center, zoom, darken(base_color, 0.72));
+            draw_polygon_set_lines(
+                periph_main,
+                center,
+                zoom,
+                darken(base_color, 0.72),
+                &empty_highlights,
+            );
             let periph_rail = periph
                 .sidings()
                 .first()
                 .expect("each peripheral has one rail polygon-set")
                 .minuend();
-            draw_polygon_set_lines(periph_rail, center, zoom, darken(base_color, 0.42));
+            draw_polygon_set_lines(
+                periph_rail,
+                center,
+                zoom,
+                darken(base_color, 0.42),
+                &empty_highlights,
+            );
         }
 
-        // Interlamina between top and middle is visually topmost.
-        let topmost_interlamina = model.interlaminas()[0].main();
-        draw_polygon_set_lines(topmost_interlamina, center, zoom, YELLOW);
+        for (inter_i, accent) in [(0usize, YELLOW), (1usize, MAGENTA)] {
+            if !interlamina_visible[inter_i] {
+                continue;
+            }
 
-        let other_interlamina = model.interlaminas()[1].main();
-        draw_polygon_set_lines(other_interlamina, center, zoom, MAGENTA);
+            let mut inter_highlights = BTreeSet::new();
+
+            if let Some((selected_inter_i, selected_id)) = highlight_interlamina {
+                if selected_inter_i == inter_i {
+                    inter_highlights.insert(selected_id);
+                }
+            }
+
+            draw_polygon_set_lines(
+                model.interlaminas()[inter_i].main(),
+                center,
+                zoom,
+                accent,
+                &inter_highlights,
+            );
+        }
+
+        draw_text("laminas", VISIBILITY_PANEL_X, 64.0, 16.0, GRAY);
+
+        for (index, &is_on) in lamina_visible.iter().enumerate() {
+            draw_visibility_checkbox(
+                lamina_visibility_row_top(index),
+                is_on,
+                lamina_accents[index],
+                lamina_labels[index],
+            );
+        }
+
+        draw_text(
+            "interlaminas",
+            VISIBILITY_PANEL_X,
+            interlamina_visibility_row_top(num_laminas, 0) - 8.0,
+            16.0,
+            GRAY,
+        );
+
+        for (index, &is_on) in interlamina_visible.iter().enumerate() {
+            draw_visibility_checkbox(
+                interlamina_visibility_row_top(num_laminas, index),
+                is_on,
+                interlamina_accents[index],
+                interlamina_labels[index],
+            );
+        }
 
         next_frame().await;
     }
