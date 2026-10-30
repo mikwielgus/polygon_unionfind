@@ -7,7 +7,7 @@ members = [".", "demos/*"]
 resolver = "2"
 
 [workspace.dependencies]
-undoredo = { version = "0.15", features = ["derive", "stable-vec"] }
+undoredo = { version = "0.16", features = ["derive", "stable-vec"] }
 
 [package]
 name = "polygon_unionfind"
