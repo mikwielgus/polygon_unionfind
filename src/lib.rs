@@ -27,8 +27,8 @@ use numlike::{
     limits::ExtendedBounds,
 };
 
-pub trait Scalar: ExtendedBounds + PofieldBundle + CastFrom<i32> + CastInto<i32> {}
-impl<T> Scalar for T where T: ExtendedBounds + PofieldBundle + CastFrom<i32> + CastInto<i32> {}
+pub trait Scalar: Clone + ExtendedBounds + PofieldBundle + CastFrom<i32> + CastInto<i32> {}
+impl<T> Scalar for T where T: Clone + ExtendedBounds + PofieldBundle + CastFrom<i32> + CastInto<i32> {}
 
 pub use bool_ops::{Difference, Intersection, Union};
 pub use combinators::{Inflated, Negated, Paralleled};
